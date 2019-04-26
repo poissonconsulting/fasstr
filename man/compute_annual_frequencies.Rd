@@ -4,15 +4,15 @@
 \alias{compute_annual_frequencies}
 \title{Perform an annual low or high-flow frequency analysis}
 \usage{
-compute_annual_frequencies(data = NULL, dates = Date, values = Value,
-  station_number = NULL, roll_days = c(1, 3, 7, 30), roll_align = "right",
+compute_annual_frequencies(data, dates = Date, values = Value,
+  station_number, roll_days = c(1, 3, 7, 30), roll_align = "right",
   use_max = FALSE, use_log = FALSE, prob_plot_position = c("weibull",
-  "median", "hazen"), prob_scale_points = c(0.9999, 0.999, 0.99, 0.9, 0.5,
-  0.2, 0.1, 0.02, 0.01, 0.001, 1e-04), fit_distr = c("PIII", "weibull"),
-  fit_distr_method = ifelse(fit_distr == "PIII", "MOM", "MLE"),
-  fit_quantiles = c(0.975, 0.99, 0.98, 0.95, 0.9, 0.8, 0.5, 0.2, 0.1, 0.05,
-  0.01), water_year = FALSE, water_year_start = 10, start_year = 0,
-  end_year = 9999, exclude_years = NULL, months = 1:12,
+  "median", "hazen"), prob_scale_points = c(0.9999, 0.999, 0.99, 0.9,
+  0.5, 0.2, 0.1, 0.02, 0.01, 0.001, 1e-04), fit_distr = c("PIII",
+  "weibull"), fit_distr_method = ifelse(fit_distr == "PIII", "MOM",
+  "MLE"), fit_quantiles = c(0.975, 0.99, 0.98, 0.95, 0.9, 0.8, 0.5, 0.2,
+  0.1, 0.05, 0.01), plot_curve = TRUE, water_year_start = 1,
+  start_year, end_year, exclude_years, months = 1:12,
   ignore_missing = FALSE)
 }
 \arguments{
@@ -34,7 +34,7 @@ Leave blank if using \code{data} argument.}
 \item{roll_align}{Character string identifying the direction of the rolling mean from the specified date, either by the first 
 ('left'), last ('right), or middle ('center') day of the rolling n-day group of observations. Default \code{'right'}.}
 
-\item{use_max}{Logical valve to indicate using annual maximums rather than the minimums for analysis. Default \code{FALSE}.}
+\item{use_max}{Logical value to indicate using annual maximums rather than the minimums for analysis. Default \code{FALSE}.}
 
 \item{use_log}{Logical value to indicate log-scale tranforming of flow data before analysis. Default \code{FALSE}.}
 
@@ -56,11 +56,9 @@ or "MLE" (maximum likelihood estimation). Selected as \code{"MOM"} if \code{fit_
 \item{fit_quantiles}{Numeric vector of quantiles to be estimated from the fitted distribution. 
 Default \code{c(.975, .99, .98, .95, .90, .80, .50, .20, .10, .05, .01)}.}
 
-\item{water_year}{Logical value indicating whether to use water years to group data instead of calendar years. Water years 
-are designated by the calendar year in which they end. Default \code{FALSE}.}
+\item{plot_curve}{Logical value to indicate plotting the computed curve on the probability plot. Default \code{TRUE}.}
 
-\item{water_year_start}{Numeric value indicating the month of the start of the water year. Used if \code{water_year = TRUE}. 
-Default \code{10}.}
+\item{water_year_start}{Numeric value indicating the month of the start of the water year for analysis. Default \code{1}.}
 
 \item{start_year}{Numeric value of the first year to consider for analysis. Leave blank to use the first year of the source data.}
 
@@ -77,15 +75,14 @@ with no missing dates will be returned. Default \code{FALSE}.}
 }
 \value{
 A list with the following elements:
-  \item{Q_stat}{Data frame with Computed annual summary statistics used in analysis}
-  \item{plotdata}{Data frame with Co-ordinates used in frequency plot.}
-  \item{freqplot}{ggplot2 object with frequency plot}
-  \item{fit}{List of fitted objects from fitdistrplus.}
-  \item{fitted_quantiles}{Data frame with fitted quantiles.}
-  \item{overview}{Data frame overview of parameters used in analysis.}
+  \item{Freq_Analysis_Data}{Data frame with computed annual summary statistics used in analysis.}
+  \item{Freq_Plot_Data}{Data frame with co-ordinates used in frequency plot.}
+  \item{Freq_Plot}{ggplot2 object with frequency plot}
+  \item{Freq_Fitting}{List of fitted objects from fitdistrplus.}
+  \item{Freq_Fitted_Quantiles}{Data frame with fitted quantiles.}
 }
 \description{
-Performs a flow frequency analysis on annual statistics from a streamflow dataset. Defaults to low-flow frequency 
+Performs a flow volume frequency analysis on annual statistics from a streamflow dataset. Defaults to low-flow frequency 
    analysis using annual minimums. Use \code{use_max} for annual high flow frequency analyses. Calculates the statistics from all 
    daily discharge values from all years, unless specified. Function will calculate using all values in the provided data (no grouped
    analysis). Analysis methodology replicates that from \href{http://www.hec.usace.army.mil/software/hec-ssp/}{HEC-SSP}.
@@ -96,6 +93,8 @@ Performs a flow frequency analysis on annual statistics from a streamflow datase
 compute_annual_frequencies(station_number = "08NM116",
                            start_year = 1980,
                            end_year = 2010)
-                            
 }
+}
+\seealso{
+\code{\link{compute_frequency_analysis}}
 }

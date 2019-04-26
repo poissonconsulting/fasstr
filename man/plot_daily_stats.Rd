@@ -2,14 +2,14 @@
 % Please edit documentation in R/plot_daily_stats.R
 \name{plot_daily_stats}
 \alias{plot_daily_stats}
-\title{Plot the daily summary statistics}
+\title{Plot daily summary statistics}
 \usage{
-plot_daily_stats(data = NULL, dates = Date, values = Value,
-  groups = STATION_NUMBER, station_number = NULL, roll_days = 1,
-  roll_align = "right", water_year = FALSE, water_year_start = 10,
-  start_year = 0, end_year = 9999, exclude_years = NULL,
-  complete_years = FALSE, months = 1:12, ignore_missing = FALSE,
-  log_discharge = TRUE, include_title = FALSE, include_year = NULL)
+plot_daily_stats(data, dates = Date, values = Value,
+  groups = STATION_NUMBER, station_number, roll_days = 1,
+  roll_align = "right", water_year_start = 1, start_year, end_year,
+  exclude_years, complete_years = FALSE, months = 1:12,
+  ignore_missing = FALSE, log_discharge = TRUE,
+  include_title = FALSE, include_year)
 }
 \arguments{
 \item{data}{A data frame of daily data that contains columns of dates, flow values, and (optional) groups (e.g. station numbers).
@@ -34,11 +34,7 @@ Leave blank if using \code{data} argument.}
 \item{roll_align}{Character string identifying the direction of the rolling mean from the specified date, either by the first 
 ('left'), last ('right), or middle ('center') day of the rolling n-day group of observations. Default \code{'right'}.}
 
-\item{water_year}{Logical value indicating whether to use water years to group data instead of calendar years. Water years 
-are designated by the calendar year in which they end. Default \code{FALSE}.}
-
-\item{water_year_start}{Numeric value indicating the month of the start of the water year. Used if \code{water_year = TRUE}. 
-Default \code{10}.}
+\item{water_year_start}{Numeric value indicating the month of the start of the water year for analysis. Default \code{1}.}
 
 \item{start_year}{Numeric value of the first year to consider for analysis. Leave blank to use the first year of the source data.}
 
@@ -81,9 +77,48 @@ Plot the daily mean, median, maximum, minimum, and percentiles for each day of t
 \examples{
 \dontrun{
 
-plot_daily_stats(station_number = "08NM116",
-                 water_year = TRUE, 
-                 water_year_start = 8)
+# Plot statistics using data argument with defaults
+flow_data <- tidyhydat::hy_daily_flows(station_number = "08NM116")
+plot_daily_stats(data = flow_data,
+                 start_year = 1980)
 
+# Plot statistics using station_number argument with defaults
+plot_daily_stats(station_number = "08NM116",
+                 start_year = 1980)
+
+# Plot statistics regardless if there is missing data for a given day of year
+plot_daily_stats(station_number = "08NM116",
+                 ignore_missing = TRUE)
+                  
+# Plot statistics using only years with no missing data
+plot_daily_stats(station_number = "08NM116",
+                 complete_years = TRUE)
+
+# Plot statistics for water years starting in October
+plot_daily_stats(station_number = "08NM116",
+                 start_year = 1980,
+                 end_year = 2010,
+                 water_year_start = 10)
+                 
+# Plot statistics with custom years
+plot_daily_stats(station_number = "08NM116",
+                 start_year = 1981,
+                 end_year = 2010,
+                 exclude_years = c(1991,1993:1995))
+                  
+# Plot statistics for 7-day flows for July-September months only
+plot_daily_stats(station_number = "08NM116",
+                 start_year = 1980,
+                 roll_days = 7,
+                 months = 7:9)
+
+# Plot statistics without a log-scale Discharge axis
+plot_daily_stats(station_number = "08NM116",
+                 start_year = 1981,
+                 end_year = 2010,
+                 log_discharge = FALSE)
 }
+}
+\seealso{
+\code{\link{calc_daily_stats}}
 }

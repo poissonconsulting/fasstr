@@ -1,4 +1,4 @@
-# Copyright 2017 Province of British Columbia
+# Copyright 2019 Province of British Columbia
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,37 +33,67 @@
 #'   \item{95 Percentile-Max Range}{a ribbon showing the range of data between the monthly cumulative 95th percentile and the maximum}
 #'   \item{'Year' Flows}{(optional) the monthly cumulative flows for the designated year}
 #'   
+#' @seealso \code{\link{calc_monthly_cumulative_stats}}
+#'   
 #' @examples
 #' \dontrun{
 #' 
-#' plot_monthly_cumulative_stats(station_number = "08NM116", 
-#'                               water_year = TRUE, 
-#'                               water_year_start = 8)
-#'
+#' # Plot volume statistics
+#' plot_monthly_cumulative_stats(station_number = "08NM116") 
+#' 
+#' # Plot yield statistics with default HYDAT basin area
+#' plot_monthly_cumulative_stats(station_number = "08NM116",
+#'                               use_yield = TRUE) 
+#' 
+#' # Plot yield statistics with custom basin area
+#' plot_monthly_cumulative_stats(station_number = "08NM116",
+#'                               use_yield = TRUE,
+#'                               basin_area = 800) 
 #' }
 #' @export
 
 
 
-plot_monthly_cumulative_stats <- function(data = NULL,
+plot_monthly_cumulative_stats <- function(data,
                                           dates = Date,
                                           values = Value,
                                           groups = STATION_NUMBER,
-                                          station_number = NULL,
+                                          station_number,
                                           use_yield = FALSE, 
-                                          basin_area = NA,
-                                          water_year = FALSE,
-                                          water_year_start = 10,
-                                          start_year = 0,
-                                          end_year = 9999,
-                                          exclude_years = NULL,
+                                          basin_area,
+                                          water_year_start = 1,
+                                          start_year,
+                                          end_year,
+                                          exclude_years,
                                           log_discharge = FALSE,
                                           include_title = FALSE,
-                                          include_year = NULL){
+                                          include_year){
   
   ## ARGUMENT CHECKS 
   ## others will be check in calc_ function
   ## ---------------
+  
+  if (missing(data)) {
+    data = NULL
+  }
+  if (missing(station_number)) {
+    station_number = NULL
+  }
+  if (missing(start_year)) {
+    start_year = 0
+  }
+  if (missing(end_year)) {
+    end_year = 9999
+  }
+  if (missing(exclude_years)) {
+    exclude_years = NULL
+  }
+  if (missing(basin_area)) {
+    basin_area = NA
+  }
+  if (missing(include_year)) {
+    include_year = NULL
+  }
   
   log_discharge_checks(log_discharge) 
   include_year_checks(include_year)
@@ -91,7 +121,6 @@ plot_monthly_cumulative_stats <- function(data = NULL,
                                                  percentiles = c(5,25,75,95),
                                                  use_yield = use_yield, 
                                                  basin_area = basin_area,
-                                                 water_year = water_year,
                                                  water_year_start = water_year_start,
                                                  start_year = start_year,
                                                  end_year = end_year,
@@ -103,31 +132,25 @@ plot_monthly_cumulative_stats <- function(data = NULL,
   
   if(!is.null(include_year)){
     
-    year_data <- fill_missing_dates(data = flow_data, water_year = water_year, water_year_start = water_year_start)
-    year_data <- add_date_variables(data = year_data, water_year = water_year, water_year_start = water_year_start)
+    year_data <- fill_missing_dates(data = flow_data, water_year_start = water_year_start)
+    year_data <- add_date_variables(data = year_data, water_year_start = water_year_start)
     
     # Add cumulative flows
     if (use_yield){
-      year_data <- add_cumulative_yield(data = year_data, water_year = water_year, water_year_start = water_year_start, basin_area = basin_area)
+      year_data <- add_cumulative_yield(data = year_data, water_year_start = water_year_start, basin_area = basin_area)
       year_data$Cumul_Flow <- year_data$Cumul_Yield_mm
     } else {
-      year_data <- add_cumulative_volume(data = year_data, water_year = water_year, water_year_start = water_year_start)
+      year_data <- add_cumulative_volume(data = year_data, water_year_start = water_year_start)
       year_data$Cumul_Flow <- year_data$Cumul_Volume_m3
     }
     
-    if (water_year) {
-      year_data$AnalysisYear <- year_data$WaterYear
-    }  else {
-      year_data$AnalysisYear <- year_data$Year
-    }
-    
-    year_data <- dplyr::filter(year_data, AnalysisYear >= start_year & AnalysisYear <= end_year)
-    year_data <- dplyr::filter(year_data, !(AnalysisYear %in% exclude_years))
+    year_data <- dplyr::filter(year_data, WaterYear >= start_year & WaterYear <= end_year)
+    year_data <- dplyr::filter(year_data, !(WaterYear %in% exclude_years))
     
    
-    year_data <- dplyr::filter(year_data, AnalysisYear == include_year)
+    year_data <- dplyr::filter(year_data, WaterYear == include_year)
     
-    year_data <- dplyr::summarize(dplyr::group_by(year_data, STATION_NUMBER, AnalysisYear, MonthName),
+    year_data <- dplyr::summarize(dplyr::group_by(year_data, STATION_NUMBER, WaterYear, MonthName),
                                      Monthly_Total = max(Cumul_Flow, na.rm = FALSE))
     year_data <- dplyr::rename(year_data, "Month" = MonthName)
     
@@ -143,13 +166,11 @@ plot_monthly_cumulative_stats <- function(data = NULL,
     }
   }
     
-    
+  monthly_stats[is.na(monthly_stats)] <- 0
   
   ## PLOT STATS
   ## ----------
 
- # monthly_stats$Month <- match(monthly_stats$Month, month.abb)
-  
   # Create the daily stats plots
   monthly_plots <- dplyr::group_by(monthly_stats, STATION_NUMBER)
   monthly_plots <- tidyr::nest(monthly_plots)
@@ -167,11 +188,11 @@ plot_monthly_cumulative_stats <- function(data = NULL,
                                                "25th-75th Percentile" = "skyblue1", "75th-95th Percentile" = "dodgerblue2",
                                                "95th Percentile-Max" = "royalblue4")) +
          ggplot2::scale_color_manual(values = c("Median" = "purple3", "Mean" = "springgreen4")) +
-         {if(!log_discharge) ggplot2::scale_y_continuous(expand = c(0, 0))} +
-         {if(log_discharge) ggplot2::scale_y_log10(expand = c(0, 0))} +
-         {if(log_discharge) ggplot2::annotation_logticks(base= 10, "left", colour = "grey25", size = 0.3,
-                                                         short = ggplot2::unit(.07, "cm"), mid = ggplot2::unit(.15, "cm"),
-                                                         long = ggplot2::unit(.2, "cm"))} +
+         {if (!log_discharge) ggplot2::scale_y_continuous(expand = c(0, 0), breaks = scales::pretty_breaks(n = 7))} +
+         {if (log_discharge) ggplot2::scale_y_log10(expand = c(0, 0), breaks = scales::log_breaks(n = 8, base = 10) )} +
+         {if (log_discharge) ggplot2::annotation_logticks(base= 10, sides = "l", colour = "grey25", size = 0.3,
+                                                          short = ggplot2::unit(.07, "cm"), mid = ggplot2::unit(.15, "cm"),
+                                                          long = ggplot2::unit(.2, "cm"))} +
          ggplot2::xlab("Month")+
          ggplot2::scale_x_discrete(expand = c(0.01,0.01)) +
          {if(!use_yield) ggplot2::ylab("Cumulative Discharge (cubic metres)")} +

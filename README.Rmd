@@ -10,18 +10,20 @@ output:
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.path = "tools/readme/README-"
+  fig.path = "tools/readme/README-",
+  warning = FALSE,
+  message = FALSE
 )
 ```
 
 # fasstr <img src="tools/readme/fasstr.PNG" align="right" />
 
-<div id="devex-badge"><a rel="Exploration" href="https://github.com/BCDevExchange/docs/blob/master/discussion/projectstates.md"><img alt="Being designed and built, but in the lab. May change, disappear, or be buggy." style="border-width:0" src="https://assets.bcdevexchange.org/images/badges/exploration.svg" title="Being designed and built, but in the lab. May change, disappear, or be buggy." /></a>
+<!-- <a id="devex-badge" rel="Delivery" href="https://github.com/BCDevExchange/assets/blob/master/README.md"><img alt="In production, but maybe in Alpha or Beta. Intended to persist and be supported." style="border-width:0" src="https://assets.bcdevexchange.org/images/badges/delivery.svg" title="In production, but maybe in Alpha or Beta. Intended to persist and be supported." /></a> -->
 [![Travis build status](https://travis-ci.org/bcgov/fasstr.svg?branch=master)](https://travis-ci.org/bcgov/fasstr)
 
 </div>
 
-The Flow Analysis Summary Statistics Tool for R (`fasstr`) is a set of [R](http://www.r-project.org) functions to tidy, summarize, analyze, trend, and visualize streamflow data. This package summarizes continuous daily mean streamflow data into various daily, monthly, annual, and long-term statistics, completes annual trends and frequency analyses, in both table and plot formats.
+The Flow Analysis Summary Statistics Tool for R (`fasstr`) is a set of [R](http://www.r-project.org) functions to clean/prepare, summarize, analyze, trend, and visualize streamflow data. This package summarizes continuous daily mean streamflow data into various daily, monthly, annual, and long-term statistics, completes annual trends and frequency analyses, in both table and plot formats.
 
 
 
@@ -29,7 +31,7 @@ The Flow Analysis Summary Statistics Tool for R (`fasstr`) is a set of [R](http:
 
 This package provides functions with solutions for streamflow data:
 
-- tidying (to prepare data for analyses; `add_*` and `fill_*` functions),
+- cleaning (to prepare data for analyses; `add_*` and `fill_*` functions),
 - screening (to look for outliers and missing data; `screen_*` functions),
 - analyzing (basic summary statistics, frequency analyses, trending ;`calc_*` and `compute_*` functions), and 
 - visualizing (to plot statistics; `plot_*` functions), amongst others.
@@ -45,15 +47,15 @@ Useful features of functions include:
 
 ## Installation
 
-To install the `fasstr` package, you need to install the `devtools` package then the `fasstr` package
-```{r,  warning = FALSE, eval = FALSE}
-install.packages("devtools")
-devtools::install_github("bcgov/fasstr")
+To install the `fasstr` package, you need to install the `remotes` package then the `fasstr` package
+```{r, eval = FALSE}
+install.packages("remotes")
+remotes::install_github("bcgov/fasstr")
 ```
   
 Then to call the `fasstr` functions you can either load the package using the `library()` function or access a specific function using a double-colon (e.g. `fasstr::calc_daily_stats()`). Several other packages will be installed in addition including  [tidyhydat](https://cran.r-project.org/web/packages/tidyhydat/index.html) for data gathering, [zyp](https://cran.r-project.org/web/packages/zyp/index.html) for trending, [ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html) for creating plots, and [dplyr](https://cran.r-project.org/web/packages/dplyr/index.html) and [tidyr](https://cran.r-project.org/web/packages/tidyr/index.html) for various data wrangling and summarizing functions, amongst others. Many of the other packages are required for the frequency analysis functions.
 
-```{r, eval = TRUE, echo = TRUE, message = FALSE, warning = FALSE}
+```{r, eval = TRUE, echo = TRUE}
 library(fasstr)
 ```
 
@@ -73,13 +75,13 @@ data <- tidyhydat::hy_daily_flows("08NM116")
 data <- data[,c(1,2,4)]
 ```
 
-```{r flow_data, warning = FALSE}
-head(data)
+```{r flow_data, echo=FALSE}
+head(data.frame(data))
 ```
 
 Alternatively, you can directly extract a flow data set directly from a HYDAT database by listing station numbers in the `station_number` argument (ex. `station_number = "08NM116"` or `station_number = c("08NM116", "08NM242")`) while leavind the data arguments blank. A data frame of daily streamflow data for all stations listed will be extracted using `tidyhydat`.  Use the following function to download a HYDAT database:
 
-```{r tidyhydat, warning = FALSE, eval = FALSE}
+```{r tidyhydat, eval = FALSE}
 tidyhydat::download_hydat()
 ```
 
@@ -87,7 +89,7 @@ This package allows for multiple stations (or other groupings) to be analyzed in
 
 ### Function Types
 
-#### Tidying 
+#### Cleaning 
 
 These functions, that start with `add_*` and `fill_*`, add columns and rows, respectively, to your streamflow data frame to help set up your data for further analysis. Examples include adding rolling means, adding date variables (Year, Month, DayofYear, etc.), adding basin areas, adding columns of volumetric and yield discharge, and filling dates with missing flow values with `NA`.
 
@@ -113,7 +115,7 @@ If certain n-day rolling mean statistics are desired to be analyzed (e.g. 3- or 
 
 To customize your analyses for specific time periods, you can designate the start and end years of your analysis using the `start_year` and `end_year` arguments and remove any unwanted years (for partial datasets for example) by listing them in the `excluded_years` argument (e.g. `excluded_years = c(1990, 1992:1994)`). Alternatively, some functions have an argument called `complete_years` that summarizes data from just those years which have a complete flow record. Some functions will also allow you to select the months of a year to analyze, using the `months` argument, as opposed to all months (if you want just summer low-flows, for example). Leaving these arguments blank will result in the summary/analysis of all years and months of the provided dataset.
 
-To group analyses by water, or hydrologic, years instead of calendar years, if desired, you can use `water_year = TRUE` within most functions (default is `water_year = FALSE`). A water year can be defined as a 12-month period that comprises a complete hydrologic cycle (wet seasons can typically cross calendar year), typically starting with the month with minimum flows (the start of a new water recharge cycle). As water years commonly start in October, the default water year is October for `fasstr`.  If another start month is desired, you can choose is using the `water_year_start` argument (numeric month) to designate the water year time period. The water year label is designated by the year it ends in (e.g. water year 2000 goes from Oct 1, 1999 to Sep 30, 2000). Start, end and excluded years will be based on the specified water year.
+To group analyses by water, or hydrologic, years instead of calendar years, if desired, you can set `water_year_start` within most functions to another month than 1 (for January). A water year can be defined as a 12-month period that comprises a complete hydrologic cycle (wet seasons can typically cross calendar year), typically starting with the month with minimum flows (the start of a new water recharge cycle). As water years commonly start in October, the default water year is October for `fasstr`.  If another start month is desired, you can choose is using the `water_year_start` argument (numeric month) to designate the water year time period. The water year label is designated by the year it ends in (e.g. water year 2000 goes from Oct 1, 1999 to Sep 30, 2000). Start, end and excluded years will be based on the specified water year.
 
 For your own analyses, you can add date variables to your dataset using the `add_date_variables()` or `add_seasons()` functions.
 
@@ -131,21 +133,21 @@ Some functions have an argument called `complete_years` which can be used, when 
 
 ### Summary statistics example: long-term statistics
 
-To determine the summary statistics of an entire dataset and by month (mean, median, maximum, minimum, and some percentiles) you can use the `calc_longterm_stats()` function. If the 'Mission Creek near East Kelowna' hydrometric station is of interest you can list the station number in the `station_number` argument to obtain the data (if `tidyhydat` and HYDAT are installed). 
+To determine the summary statistics of daily data by month (mean, median, maximum, minimum, and some percentiles) you can use the `calc_longterm_daily_stats()` function. If the 'Mission Creek near East Kelowna' hydrometric station is of interest you can list the station number in the `station_number` argument to obtain the data (if `tidyhydat` and HYDAT are installed). 
 
-```{r example1, warning = FALSE}
-calc_longterm_stats(station_number = "08NM116", 
-                    start_year = 1981, 
-                    end_year = 2010,
-                    custom_months = 7:9, 
-                    custom_months_label = "Summer")
+```{r example1}
+calc_longterm_daily_stats(station_number = "08NM116", 
+                          start_year = 1981, 
+                          end_year = 2010,
+                          custom_months = 7:9, 
+                          custom_months_label = "Summer")
 ```
 
 ### Plotting example 1: daily summary statistics
 
 To visualize the daily streamflow patterns on an annual basis, the `plot_daily_stats()` function will plot out various summary statistics for each day of the year. Data can also be filtered for certain years of interest (a 1981-2010 normals period for this example) using the `start_year` and `end_year` arguments. We can also compare indivual years against the statistics using `include_year` argument like below.
 
-```{r plot1, warning = FALSE, fig.height = 4, fig.width = 10, message=FALSE}
+```{r plot1, fig.height = 4, fig.width = 10}
 plot_daily_stats(station_number = "08NM116",
                  start_year = 1981,
                  end_year = 2010,
@@ -158,7 +160,7 @@ plot_daily_stats(station_number = "08NM116",
 
 Flow duration curves can be produced using the `plot_flow_duration()` function.
 
-```{r plot2, warning = FALSE, fig.height = 4, fig.width = 7}
+```{r plot2, fig.height = 4, fig.width = 7}
 plot_flow_duration(station_number = "08NM116",
                    start_year = 1981,
                    end_year = 2010)
@@ -168,22 +170,22 @@ plot_flow_duration(station_number = "08NM116",
 
 This package also provides a function, `compute_annual_frequencies()`, to complete frequency analyses (using the same methods as [HEC-SSP](http://www.hec.usace.army.mil/software/hec-ssp/)). The default fitting distribution is 'log-Pearson Type III', but the 'Weibull' distribution can also be used. Other default plotting and fitting methods are described in the function documentation. For this example, the 7-day low-flow (low-flow is default) quantiles are calculated for the Mission Creek hydrometric station using the 'log-Pearson Type III' distribution. With this, several low-flow indicators can be determined (i.e. 7Q5, 7Q10).
 
-```{r example2, warning = FALSE}
+```{r example2}
 freq_results <- compute_annual_frequencies(station_number = "08NM116",
                                            start_year = 1981,
                                            end_year = 2010,
                                            roll_days = 7)
-freq_results$fitted_quantiles
+freq_results$Freq_Fitted_Quantiles
 ```
 
 The probabilty of observed extreme events can also be plotted (using selected plotting position) along with the computed quantiles curve for comparison.
 
-```{r plot3, warning = FALSE, fig.height = 4, fig.width = 7}
+```{r plot3, fig.height = 4, fig.width = 7}
 freq_results <- compute_annual_frequencies(station_number = "08NM116",
                                            start_year = 1981,
                                            end_year = 2010,
                                            roll_days = c(1,3,7,30))
-freq_results$freqplot
+freq_results$Freq_Plot
 ```
 
 ## Project Status

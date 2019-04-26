@@ -1,4 +1,4 @@
-# Copyright 2017 Province of British Columbia
+# Copyright 2019 Province of British Columbia
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,25 +30,37 @@
 #' @examples
 #' \dontrun{
 #' 
-#' add_rolling_means(data = flow_data, roll_days = 7, roll_align = 'centre')
-#' 
+#' # Add default 3, 7, and 30-day rolling means, with "right" alignment
 #' add_rolling_means(station_number = "08NM116")
 #'
+#' # Add custom 5 and 10-day rolling means
+#' add_rolling_means(station_number = "08NM116",
+#'                   roll_days = c(5,10))
+#'                   
+#' # Add default 3, 7, and 30-day rolling means, with "left" alignment
+#' add_rolling_means(station_number = "08NM116",
+#'                   roll_align = "left")                
 #' }
 #' @export
 
 
-add_rolling_means <- function(data = NULL,
+add_rolling_means <- function(data,
                               dates = Date,
                               values = Value,
                               groups = STATION_NUMBER,
-                              station_number = NULL,
+                              station_number,
                               roll_days = c(3,7,30),
                               roll_align = "right"){
   
   
   ## ARGUMENT CHECKS
   ## ---------------
+  if (missing(data)) {
+    data = NULL
+  }
+  if (missing(station_number)) {
+    station_number = NULL
+  }
   
   rolling_days_checks(roll_days, roll_align, multiple = TRUE)
 
@@ -113,7 +125,7 @@ add_rolling_means <- function(data = NULL,
   names(flow_data)[names(flow_data) == "Value"] <- as.character(substitute(values))
   
   # Remove the STATION_NUMBER columns if one wasn't in flowdata originally
-  if(!"STATION_NUMBER" %in% orig_cols) {
+  if(!as.character(substitute(groups)) %in% orig_cols) {
     flow_data <- dplyr::select(flow_data, -STATION_NUMBER)
   }
   

@@ -4,20 +4,20 @@
 \alias{compute_hydat_peak_frequencies}
 \title{Perform a flow frequency analysis on annual statistics}
 \usage{
-compute_hydat_peak_frequencies(station_number = NULL, use_max = FALSE,
-  use_log = FALSE, prob_plot_position = c("weibull", "median", "hazen"),
-  prob_scale_points = c(0.9999, 0.999, 0.99, 0.9, 0.5, 0.2, 0.1, 0.02, 0.01,
-  0.001, 1e-04), fit_distr = c("PIII", "weibull"),
+compute_hydat_peak_frequencies(station_number, use_max = FALSE,
+  use_log = FALSE, prob_plot_position = c("weibull", "median",
+  "hazen"), prob_scale_points = c(0.9999, 0.999, 0.99, 0.9, 0.5, 0.2,
+  0.1, 0.02, 0.01, 0.001, 1e-04), fit_distr = c("PIII", "weibull"),
   fit_distr_method = ifelse(fit_distr == "PIII", "MOM", "MLE"),
-  fit_quantiles = c(0.975, 0.99, 0.98, 0.95, 0.9, 0.8, 0.5, 0.2, 0.1, 0.05,
-  0.01), start_year = 0, end_year = 9999, exclude_years = NULL)
+  fit_quantiles = c(0.975, 0.99, 0.98, 0.95, 0.9, 0.8, 0.5, 0.2, 0.1,
+  0.05, 0.01), start_year, end_year, exclude_years, plot_curve = TRUE)
 }
 \arguments{
 \item{station_number}{A character string vector of seven digit Water Survey of Canada station numbers (e.g. \code{"08NM116"}) of
 which to extract annual peak minimum or maximum instantaneous streamflow data from a HYDAT database. Requires \code{tidyhydat} 
 package and a HYDAT database.}
 
-\item{use_max}{Logical valve to indicate using annual maximums rather than the minimums for analysis. Default \code{FALSE}.}
+\item{use_max}{Logical value to indicate using annual maximums rather than the minimums for analysis. Default \code{FALSE}.}
 
 \item{use_log}{Logical value to indicate log-scale tranforming of flow data before analysis. Default \code{FALSE}.}
 
@@ -44,15 +44,16 @@ Default \code{c(.975, .99, .98, .95, .90, .80, .50, .20, .10, .05, .01)}.}
 \item{end_year}{Numeric value of the last year to consider for analysis. Leave blank to use the last year of the source data.}
 
 \item{exclude_years}{Numeric vector of years to exclude from analysis. Leave blank to include all years.}
+
+\item{plot_curve}{Logical value to indicate plotting the computed curve on the probability plot. Default \code{TRUE}.}
 }
 \value{
 A list with the following elements:
-  \item{Q_stat}{Data frame with Computed annual summary statistics used in analysis}
-  \item{plotdata}{Data frame with Co-ordinates used in frequency plot.}
-  \item{freqplot}{ggplot2 object with frequency plot}
-  \item{fit}{List of fitted objects from fitdistrplus.}
-  \item{fitted_quantiles}{Data frame with fitted quantiles.}
-  \item{overview}{Data frame overview of parameters used in analysis.}
+  \item{Freq_Analysis_Data}{Data frame with computed annual summary statistics used in analysis.}
+  \item{Freq_Plot_Data}{Data frame with co-ordinates used in frequency plot.}
+  \item{Freq_Plot}{ggplot2 object with frequency plot}
+  \item{Freq_Fitting}{List of fitted objects from fitdistrplus.}
+  \item{Freq_Fitted_Quantiles}{Data frame with fitted quantiles.}
 }
 \description{
 Performs a volume frequency analysis on annual statistics from a streamflow dataset. Calculates the statistics from all 
@@ -67,4 +68,7 @@ compute_hydat_peak_frequencies(station_number = "08NM116",
                                end_year = 2010)
                             
 }
+}
+\seealso{
+\code{\link{compute_frequency_analysis}}
 }

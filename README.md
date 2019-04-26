@@ -3,16 +3,18 @@
 fasstr <img src="tools/readme/fasstr.PNG" align="right" />
 ==========================================================
 
-<a rel="Exploration" href="https://github.com/BCDevExchange/docs/blob/master/discussion/projectstates.md"><img alt="Being designed and built, but in the lab. May change, disappear, or be buggy." style="border-width:0" src="https://assets.bcdevexchange.org/images/badges/exploration.svg" title="Being designed and built, but in the lab. May change, disappear, or be buggy." /></a> [![Travis build status](https://travis-ci.org/bcgov/fasstr.svg?branch=master)](https://travis-ci.org/bcgov/fasstr)
+<!-- <a id="devex-badge" rel="Delivery" href="https://github.com/BCDevExchange/assets/blob/master/README.md"><img alt="In production, but maybe in Alpha or Beta. Intended to persist and be supported." style="border-width:0" src="https://assets.bcdevexchange.org/images/badges/delivery.svg" title="In production, but maybe in Alpha or Beta. Intended to persist and be supported." /></a> -->
+[![Travis build status](https://travis-ci.org/bcgov/fasstr.svg?branch=master)](https://travis-ci.org/bcgov/fasstr)
 
-The Flow Analysis Summary Statistics Tool for R (`fasstr`) is a set of [R](http://www.r-project.org) functions to tidy, summarize, analyze, trend, and visualize streamflow data. This package summarizes continuous daily mean streamflow data into various daily, monthly, annual, and long-term statistics, completes annual trends and frequency analyses, in both table and plot formats.
+</div>
+The Flow Analysis Summary Statistics Tool for R (`fasstr`) is a set of [R](http://www.r-project.org) functions to clean/prepare, summarize, analyze, trend, and visualize streamflow data. This package summarizes continuous daily mean streamflow data into various daily, monthly, annual, and long-term statistics, completes annual trends and frequency analyses, in both table and plot formats.
 
 Features
 --------
 
 This package provides functions with solutions for streamflow data:
 
--   tidying (to prepare data for analyses; `add_*` and `fill_*` functions),
+-   cleaning (to prepare data for analyses; `add_*` and `fill_*` functions),
 -   screening (to look for outliers and missing data; `screen_*` functions),
 -   analyzing (basic summary statistics, frequency analyses, trending ;`calc_*` and `compute_*` functions), and
 -   visualizing (to plot statistics; `plot_*` functions), amongst others.
@@ -29,11 +31,11 @@ Useful features of functions include:
 Installation
 ------------
 
-To install the `fasstr` package, you need to install the `devtools` package then the `fasstr` package
+To install the `fasstr` package, you need to install the `remotes` package then the `fasstr` package
 
 ``` r
-install.packages("devtools")
-devtools::install_github("bcgov/fasstr")
+install.packages("remotes")
+remotes::install_github("bcgov/fasstr")
 ```
 
 Then to call the `fasstr` functions you can either load the package using the `library()` function or access a specific function using a double-colon (e.g. `fasstr::calc_daily_stats()`). Several other packages will be installed in addition including [tidyhydat](https://cran.r-project.org/web/packages/tidyhydat/index.html) for data gathering, [zyp](https://cran.r-project.org/web/packages/zyp/index.html) for trending, [ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html) for creating plots, and [dplyr](https://cran.r-project.org/web/packages/dplyr/index.html) and [tidyr](https://cran.r-project.org/web/packages/tidyr/index.html) for various data wrangling and summarizing functions, amongst others. Many of the other packages are required for the frequency analysis functions.
@@ -53,18 +55,13 @@ All functions in `fasstr` require a daily mean streamflow dataset from one or mo
 
 Using the `data` option, a data frame of daily data containing columns of dates (YYYY-MM-DD in date format), values (mean daily discharge in cubic metres per second in numeric format), and, optionally, grouping identifiers (character string of station names or numbers) is called. By default the functions will look for columns identified as 'Date', 'Value', and 'STATION\_NUMBER', respectively, to be compatible with the `tidyhydat` defaults, but columns of different names can be identified using the `dates`, `values`, `groups` column arguments (ex. `values = Yield_mm`). The following is an example of an appropriate dataframe (STATION\_NUMBER not required):
 
-``` r
-head(data)
-#> # A tibble: 6 x 3
-#>   STATION_NUMBER Date       Value
-#>   <chr>          <date>     <dbl>
-#> 1 08NM116        1949-04-01  1.13
-#> 2 08NM116        1949-04-02  1.53
-#> 3 08NM116        1949-04-03  2.07
-#> 4 08NM116        1949-04-04  2.07
-#> 5 08NM116        1949-04-05  2.21
-#> 6 08NM116        1949-04-06  2.21
-```
+    #>   STATION_NUMBER       Date Value
+    #> 1        08NM116 1949-04-01  1.13
+    #> 2        08NM116 1949-04-02  1.53
+    #> 3        08NM116 1949-04-03  2.07
+    #> 4        08NM116 1949-04-04  2.07
+    #> 5        08NM116 1949-04-05  2.21
+    #> 6        08NM116 1949-04-06  2.21
 
 Alternatively, you can directly extract a flow data set directly from a HYDAT database by listing station numbers in the `station_number` argument (ex. `station_number = "08NM116"` or `station_number = c("08NM116", "08NM242")`) while leavind the data arguments blank. A data frame of daily streamflow data for all stations listed will be extracted using `tidyhydat`. Use the following function to download a HYDAT database:
 
@@ -76,7 +73,7 @@ This package allows for multiple stations (or other groupings) to be analyzed in
 
 ### Function Types
 
-#### Tidying
+#### Cleaning
 
 These functions, that start with `add_*` and `fill_*`, add columns and rows, respectively, to your streamflow data frame to help set up your data for further analysis. Examples include adding rolling means, adding date variables (Year, Month, DayofYear, etc.), adding basin areas, adding columns of volumetric and yield discharge, and filling dates with missing flow values with `NA`.
 
@@ -98,7 +95,7 @@ If certain n-day rolling mean statistics are desired to be analyzed (e.g. 3- or 
 
 To customize your analyses for specific time periods, you can designate the start and end years of your analysis using the `start_year` and `end_year` arguments and remove any unwanted years (for partial datasets for example) by listing them in the `excluded_years` argument (e.g. `excluded_years = c(1990, 1992:1994)`). Alternatively, some functions have an argument called `complete_years` that summarizes data from just those years which have a complete flow record. Some functions will also allow you to select the months of a year to analyze, using the `months` argument, as opposed to all months (if you want just summer low-flows, for example). Leaving these arguments blank will result in the summary/analysis of all years and months of the provided dataset.
 
-To group analyses by water, or hydrologic, years instead of calendar years, if desired, you can use `water_year = TRUE` within most functions (default is `water_year = FALSE`). A water year can be defined as a 12-month period that comprises a complete hydrologic cycle (wet seasons can typically cross calendar year), typically starting with the month with minimum flows (the start of a new water recharge cycle). As water years commonly start in October, the default water year is October for `fasstr`. If another start month is desired, you can choose is using the `water_year_start` argument (numeric month) to designate the water year time period. The water year label is designated by the year it ends in (e.g. water year 2000 goes from Oct 1, 1999 to Sep 30, 2000). Start, end and excluded years will be based on the specified water year.
+To group analyses by water, or hydrologic, years instead of calendar years, if desired, you can set `water_year_start` within most functions to another month than 1 (for January). A water year can be defined as a 12-month period that comprises a complete hydrologic cycle (wet seasons can typically cross calendar year), typically starting with the month with minimum flows (the start of a new water recharge cycle). As water years commonly start in October, the default water year is October for `fasstr`. If another start month is desired, you can choose is using the `water_year_start` argument (numeric month) to designate the water year time period. The water year label is designated by the year it ends in (e.g. water year 2000 goes from Oct 1, 1999 to Sep 30, 2000). Start, end and excluded years will be based on the specified water year.
 
 For your own analyses, you can add date variables to your dataset using the `add_date_variables()` or `add_seasons()` functions.
 
@@ -117,29 +114,29 @@ Examples
 
 ### Summary statistics example: long-term statistics
 
-To determine the summary statistics of an entire dataset and by month (mean, median, maximum, minimum, and some percentiles) you can use the `calc_longterm_stats()` function. If the 'Mission Creek near East Kelowna' hydrometric station is of interest you can list the station number in the `station_number` argument to obtain the data (if `tidyhydat` and HYDAT are installed).
+To determine the summary statistics of daily data by month (mean, median, maximum, minimum, and some percentiles) you can use the `calc_longterm_daily_stats()` function. If the 'Mission Creek near East Kelowna' hydrometric station is of interest you can list the station number in the `station_number` argument to obtain the data (if `tidyhydat` and HYDAT are installed).
 
 ``` r
-calc_longterm_stats(station_number = "08NM116", 
-                    start_year = 1981, 
-                    end_year = 2010,
-                    custom_months = 7:9, 
-                    custom_months_label = "Summer")
+calc_longterm_daily_stats(station_number = "08NM116", 
+                          start_year = 1981, 
+                          end_year = 2010,
+                          custom_months = 7:9, 
+                          custom_months_label = "Summer")
 #> # A tibble: 14 x 8
 #>    STATION_NUMBER Month      Mean Median Maximum Minimum   P10   P90
-#>  * <chr>          <fct>     <dbl>  <dbl>   <dbl>   <dbl> <dbl> <dbl>
-#>  1 08NM116        Jan        1.22  1.00     9.50   0.160 0.540  1.85
+#>    <chr>          <fct>     <dbl>  <dbl>   <dbl>   <dbl> <dbl> <dbl>
+#>  1 08NM116        Jan        1.22  1        9.5    0.160 0.540  1.85
 #>  2 08NM116        Feb        1.16  0.970    4.41   0.140 0.474  1.99
 #>  3 08NM116        Mar        1.85  1.40     9.86   0.380 0.705  3.80
 #>  4 08NM116        Apr        8.32  6.26    37.9    0.505 1.63  17.5 
 #>  5 08NM116        May       23.6  20.8     74.4    3.83  9.33  41.2 
 #>  6 08NM116        Jun       21.5  19.5     84.5    0.450 6.10  38.9 
-#>  7 08NM116        Jul        6.48  3.90    54.5    0.332 1.02  15.0 
+#>  7 08NM116        Jul        6.48  3.90    54.5    0.332 1.02  15   
 #>  8 08NM116        Aug        2.13  1.57    13.3    0.427 0.775  4.29
 #>  9 08NM116        Sep        2.19  1.58    14.6    0.364 0.735  4.35
 #> 10 08NM116        Oct        2.10  1.60    15.2    0.267 0.794  3.98
 #> 11 08NM116        Nov        2.04  1.73    11.7    0.260 0.560  3.90
-#> 12 08NM116        Dec        1.30  1.05     7.30   0.342 0.500  2.33
+#> 12 08NM116        Dec        1.30  1.05     7.30   0.342 0.5    2.33
 #> 13 08NM116        Long-term  6.17  1.89    84.5    0.140 0.680 19.3 
 #> 14 08NM116        Summer     3.61  1.98    54.5    0.332 0.799  7.64
 ```
@@ -155,7 +152,7 @@ plot_daily_stats(station_number = "08NM116",
                  log_discharge = TRUE,
                  include_year = 1991,
                  ignore_missing = TRUE)
-#> $Daily_Stats
+#> $Daily_Statistics
 ```
 
 ![](tools/readme/README-plot1-1.png)
@@ -182,19 +179,21 @@ freq_results <- compute_annual_frequencies(station_number = "08NM116",
                                            start_year = 1981,
                                            end_year = 2010,
                                            roll_days = 7)
-freq_results$fitted_quantiles
-#>    Distribution Probability Return Period Q007-day-avg
-#> 1          PIII       0.010    100.000000    0.1929445
-#> 2          PIII       0.050     20.000000    0.2770067
-#> 3          PIII       0.100     10.000000    0.3318582
-#> 4          PIII       0.200      5.000000    0.4084737
-#> 5          PIII       0.500      2.000000    0.5881156
-#> 6          PIII       0.800      1.250000    0.8122160
-#> 7          PIII       0.900      1.111111    0.9463443
-#> 8          PIII       0.950      1.052632    1.0651498
-#> 9          PIII       0.975      1.025641    1.1735280
-#> 10         PIII       0.980      1.020408    1.2066583
-#> 11         PIII       0.990      1.010101    1.3050198
+freq_results$Freq_Fitted_Quantiles
+#> # A tibble: 11 x 4
+#>    Distribution Probability `Return Period` `7-Day`
+#>    <chr>              <dbl>           <dbl>   <dbl>
+#>  1 PIII               0.01           100      0.193
+#>  2 PIII               0.05            20      0.277
+#>  3 PIII               0.1             10      0.332
+#>  4 PIII               0.2              5      0.408
+#>  5 PIII               0.5              2      0.588
+#>  6 PIII               0.8              1.25   0.812
+#>  7 PIII               0.9              1.11   0.946
+#>  8 PIII               0.95             1.05   1.07 
+#>  9 PIII               0.975            1.03   1.17 
+#> 10 PIII               0.98             1.02   1.21 
+#> 11 PIII               0.99             1.01   1.31
 ```
 
 The probabilty of observed extreme events can also be plotted (using selected plotting position) along with the computed quantiles curve for comparison.
@@ -204,7 +203,7 @@ freq_results <- compute_annual_frequencies(station_number = "08NM116",
                                            start_year = 1981,
                                            end_year = 2010,
                                            roll_days = c(1,3,7,30))
-freq_results$freqplot
+freq_results$Freq_Plot
 ```
 
 ![](tools/readme/README-plot3-1.png)

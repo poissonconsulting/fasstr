@@ -4,9 +4,8 @@
 \alias{add_cumulative_volume}
 \title{Add daily cumulative volumetric flows on an annual basis}
 \usage{
-add_cumulative_volume(data = NULL, dates = Date, values = Value,
-  groups = STATION_NUMBER, station_number = NULL, water_year = FALSE,
-  water_year_start = 10)
+add_cumulative_volume(data, dates = Date, values = Value,
+  groups = STATION_NUMBER, station_number, water_year_start = 1)
 }
 \arguments{
 \item{data}{A data frame of daily data that contains columns of dates, flow values, and (optional) groups (e.g. station numbers).
@@ -26,27 +25,22 @@ Remove the 'STATION_NUMBER' column beforehand to remove this grouping. Leave bla
 which to extract daily streamflow data from a HYDAT database. Requires \code{tidyhydat} package and a HYDAT database.
 Leave blank if using \code{data} argument.}
 
-\item{water_year}{Logical value indicating whether to use water years to group data instead of calendar years. Water years 
-are designated by the calendar year in which they end. Default \code{FALSE}.}
-
-\item{water_year_start}{Numeric value indicating the month of the start of the water year. Used if \code{water_year = TRUE}. 
-Default \code{10}.}
+\item{water_year_start}{Numeric value indicating the month of the start of the water year for analysis. Default \code{1}.}
 }
 \value{
 A tibble data frame of the source data with an additional column:
   \item{Cumul_Volume_m3}{cumulative volumetric flows for each day for each year, in units of cubic metres}
 }
 \description{
-Add a column of daily cumulative volumetric flows on an annual basis to a streamflow dataset. Adds the volumetric 
-   discharge from each day with the previous day(s) for each year, in units of cubic metres. 
+Add a column of rolling daily cumulative volumetric flows on an annual basis to a streamflow dataset. Adds the 
+   volumetric discharge from each day with the previous day(s) for each year, in units of cubic metres. 
    The cumulative flows restart every year and are only calculated in years with complete data.
 }
 \examples{
 \dontrun{
 
-add_cumulative_volume(data = flow_data)
-
-add_cumulative_volume(station_number = "08NM116", water_year = TRUE, water_year_start = 8)
-
+# Add a column based on years starting in August
+add_cumulative_volume(station_number = "08NM116", 
+                      water_year_start = 8)
 }
 }

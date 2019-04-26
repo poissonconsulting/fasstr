@@ -1,4 +1,4 @@
-# Copyright 2017 Province of British Columbia
+# Copyright 2019 Province of British Columbia
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,41 +21,74 @@
 #' @inheritParams calc_longterm_stats
 #' @inheritParams plot_annual_stats
 #' @param months Numeric vector of month curves to plot. NA if no months required. Default \code{1:12}.
-#' @param incl_longterm Logical value indicating whether to include longterm curve of all data. Default \code{TRUE}.
+#' @param include_longterm Logical value indicating whether to include longterm curve of all data. Default \code{TRUE}.
 #'
 #' @return A list of ggplot2 objects with the following for each station provided:
 #'   \item{Flow_Duration}{a plot that contains flow duration curves for each month, long-term, and (option) customized months}
 #'   
+#' @seealso \code{\link{calc_longterm_stats}}
+#'   
 #' @examples
 #' \dontrun{
 #' 
-#' plot_flow_duration(station_number = "08NM116", 
-#'                    water_year = TRUE, 
-#'                    water_year_start = 8)
-#'
+#' # Plot statistics using data argument with defaults
+#' flow_data <- tidyhydat::hy_daily_flows(station_number = "08NM116")
+#' plot_flow_duration(data = flow_data,
+#'                     start_year = 1980)
+#' 
+#' # Plot statistics using station_number argument with defaults
+#' plot_flow_duration(station_number = "08NM116",
+#'                    start_year = 1980)
+#' 
+#' # Plot statistics regardless if there is missing data for a given year
+#' plot_flow_duration(station_number = "08NM116",
+#'                    ignore_missing = TRUE)
+#'                   
+#' # Plot statistics for water years starting in October
+#' plot_flow_duration(station_number = "08NM116",
+#'                    start_year = 1980,
+#'                    end_year = 2010,
+#'                    water_year_start = 10)
+#'                   
+#' # Plot statistics with custom years
+#' plot_flow_duration(station_number = "08NM116",
+#'                    start_year = 1981,
+#'                    end_year = 2010,
+#'                    exclude_years = c(1991,1993:1995))
+#' 
+#' # Plot statistics and add custom stats for July-September
+#' plot_flow_duration(station_number = "08NM116",
+#'                    start_year = 1980,
+#'                    custom_months = 7:9,
+#'                    custom_months_label = "Summer")  
+#' 
+#' # Plot statistics for just July-September
+#' plot_flow_duration(station_number = "08NM116",
+#'                    start_year = 1980,
+#'                    months = 7:9,
+#'                    include_longterm = FALSE)
 #' }
 #' @export
 
 
 
-plot_flow_duration <- function(data = NULL,
+plot_flow_duration <- function(data,
                                dates = Date,
                                values = Value,
                                groups = STATION_NUMBER,
-                               station_number = NULL,
+                               station_number,
                                roll_days = 1,
                                roll_align = "right",
-                               water_year = FALSE,
-                               water_year_start = 10,
-                               start_year = 0,
-                               end_year = 9999,
-                               exclude_years = NULL,
+                               water_year_start = 1,
+                               start_year,
+                               end_year,
+                               exclude_years,
                                complete_years = FALSE,
-                               custom_months = NULL,
-                               custom_months_label = "Custom-Months",
+                               custom_months,
+                               custom_months_label,
                                ignore_missing = FALSE,
                                months = 1:12,
-                               incl_longterm = TRUE,
+                               include_longterm = TRUE,
                                log_discharge = TRUE,
                                include_title = FALSE){
   
@@ -64,12 +97,33 @@ plot_flow_duration <- function(data = NULL,
   ## ARGUMENT CHECKS
   ## ---------------
   
+  if (missing(data)) {
+    data = NULL
+  }
+  if (missing(station_number)) {
+    station_number = NULL
+  }
+  if (missing(start_year)) {
+    start_year = 0
+  }
+  if (missing(end_year)) {
+    end_year = 9999
+  }
+  if (missing(exclude_years)) {
+    exclude_years = NULL
+  }
+  if (missing(custom_months)) {
+    custom_months = NULL
+  }
+  if (missing(custom_months_label)) {
+    custom_months_label = "Custom-Months"
+  }
+  
   log_discharge_checks(log_discharge)
   custom_months_checks(custom_months, custom_months_label)
   include_title_checks(include_title)
-  
-  if (length(incl_longterm) > 1)   stop("Only one incl_longterm logical value can be listed.", call. = FALSE)
-  if (!is.logical(incl_longterm))  stop("incl_longterm argument must be logical (TRUE/FALSE).", call. = FALSE)
+  include_longterm_checks(include_longterm)
+    
   
   
   ## FLOW DATA CHECKS AND FORMATTING
@@ -88,18 +142,17 @@ plot_flow_duration <- function(data = NULL,
   ## CALC STATS
   ## ----------
   
-  percentiles_data <- calc_longterm_stats(data = flow_data,
-                                          percentiles = c(.01,.1,.2:9.8,10:90,90.2:99.8,99.9,99.99),
-                                          roll_days = roll_days,
-                                          roll_align = roll_align,
-                                          water_year = water_year,
-                                          water_year_start = water_year_start,
-                                          start_year = start_year,
-                                          end_year = end_year,
-                                          exclude_years = exclude_years,
-                                          complete_years = complete_years,
-                                          custom_months = custom_months,
-                                          ignore_missing = ignore_missing)
+  percentiles_data <- calc_longterm_daily_stats(data = flow_data,
+                                                percentiles = c(.01,.1,.2:9.8,10:90,90.2:99.8,99.9,99.99),
+                                                roll_days = roll_days,
+                                                roll_align = roll_align,
+                                                water_year_start = water_year_start,
+                                                start_year = start_year,
+                                                end_year = end_year,
+                                                exclude_years = exclude_years,
+                                                complete_years = complete_years,
+                                                custom_months = custom_months,
+                                                ignore_missing = ignore_missing)
   
 
   
@@ -110,7 +163,7 @@ plot_flow_duration <- function(data = NULL,
   
   # Filter for months and longterm selected to plot
   include <- month.abb[months]
-  if (incl_longterm) { include <- c(include, "Long-term") }
+  if (include_longterm) { include <- c(include, "Long-term") }
   if (!is.null(custom_months)) { include <- c(include, "Custom-Months") }
   percentiles_data <- dplyr::filter(percentiles_data, Month %in% include)
   
@@ -130,7 +183,10 @@ plot_flow_duration <- function(data = NULL,
     colour_list[[ custom_months_label ]] = "grey60"
   }
 
-
+  if (all(is.na(percentiles_data$Value))) {
+    percentiles_data[is.na(percentiles_data)] <- 1
+  }
+  
   ## PLOT STATS
   ## ----------
   
@@ -144,9 +200,9 @@ plot_flow_duration <- function(data = NULL,
   flow_plots <- dplyr::mutate(flow_plots,
                             plot = purrr::map2(data, STATION_NUMBER,
     ~ggplot2::ggplot(data = ., ggplot2::aes(x = Percentile, y = Value, colour = Month)) +
-      ggplot2::geom_line() +
-      {if (log_discharge) ggplot2::scale_y_log10(expand = c(0, 0))} +
-      {if (!log_discharge) ggplot2::scale_y_continuous(breaks = scales::pretty_breaks(n = 10),expand = c(0, 0))} +
+      ggplot2::geom_line(na.rm = TRUE) +
+      {if (log_discharge) ggplot2::scale_y_log10(expand = c(0, 0), breaks = scales::log_breaks(n = 8, base = 10))} +
+      {if (!log_discharge) ggplot2::scale_y_continuous(breaks = scales::pretty_breaks(n = 10), expand = c(0, 0))} +
       ggplot2::scale_x_continuous(expand = c(0,0), breaks = scales::pretty_breaks(n = 10)) +
       ggplot2::ylab(y_axis_title) +
       ggplot2::xlab("% Time flow equalled or exceeded") +

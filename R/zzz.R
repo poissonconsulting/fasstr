@@ -70,7 +70,28 @@
           "StatMonth",
           "Units",
           "WaterYear",
-          "WaterDayofYear")
+          "WaterDayofYear",
+          "Min_1_Day",
+          "Min_3_Day",
+          "Min_7_Day",
+          "Min_30_Day",
+          "AnalysisMonth",
+          "Seasons_temp",
+          "Season",
+          "Basin_Area_sqkm2",
+          "Basin_Area_sqkm",
+          "CalendarYear",
+          "STATION_NAME",
+          "PROV_TERR_STATE_LOC",
+          "HYD_STATUS",
+          "LATITUDE",
+          "LONGITUDE",
+          "REGULATED",
+          "RHBN",
+          "REAL_TIME",
+          "Info",
+          "Month_Mean",
+          "Annual_Mean")
       )
     invisible()
   }

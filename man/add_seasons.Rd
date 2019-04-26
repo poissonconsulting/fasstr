@@ -2,10 +2,10 @@
 % Please edit documentation in R/add_seasons.R
 \name{add_seasons}
 \alias{add_seasons}
-\title{Add two and four seasons identifier columns}
+\title{Add a column of seasons}
 \usage{
-add_seasons(data = NULL, dates = Date, station_number = NULL,
-  water_year = FALSE, water_year_start = 10)
+add_seasons(data, dates = Date, station_number, water_year_start = 1,
+  seasons_length)
 }
 \arguments{
 \item{data}{A data frame of daily data that contains columns of dates, flow values, and (optional) groups (e.g. station numbers).
@@ -18,27 +18,31 @@ Date' (default). Leave blank if using \code{station_number} argument.}
 which to extract daily streamflow data from a HYDAT database. Requires \code{tidyhydat} package and a HYDAT database.
 Leave blank if using \code{data} argument.}
 
-\item{water_year}{Logical value indicating whether to use water years to group data instead of calendar years. Water years 
-are designated by the calendar year in which they end. Default \code{FALSE}.}
+\item{water_year_start}{Numeric value indicating the month of the start of the water year for analysis. Default \code{1}.}
 
-\item{water_year_start}{Numeric value indicating the month of the start of the water year. Used if \code{water_year = TRUE}. 
-Default \code{10}.}
+\item{seasons_length}{Numeric value indicating the desired length of seasons in months, divisible into 12. Required.}
 }
 \value{
-A tibble data frame of the source data with additional columns:
-  \item{Seasons2}{two seasons identifiers}
-  \item{Seasons4}{four seasons identifiers}
+A tibble data frame of the source data with additional column:
+  \item{Season}{season identifier labelled by the start and end month of the season}
 }
 \description{
-Add columns of Seasons2 (two 6-month seasons) and Seasons4 (four 3-month seasons) to a data frame with a column of dates 
-   called 'Date'. The start of the two and four seasons coincides with the start month of each year ('Jan-Jun' and 'Jan-Mar' for 
-   the first two and four calendar year seasons, respectively, or 'Oct-Mar' and 'Apr-Sep' for the first two and four water year
-   seasons starting in Oct, respectively). Each season is designated by the calendar or water year in which it occurs.
+Adds a column of seasons identifiers to a data frame with a column of dates called 'Date'. The length of seasons,
+   in months, is provided using the seasons_length argument. As seasons are grouped by months the length of the seasons must be
+   divisible into 12 with one of the following season lengths: 1, 2, 3, 4, 6, or 12 months. The start of the first season 
+   coincides with the start month of each year; 'Jan-Jun' for 6-month seasons starting with calendar years or 'Dec-Feb' for 3-month
+   seasons starting with water year starting in December.
 }
 \examples{
 \dontrun{
 
-add_seasons(station_number = "08NM116", water_year = TRUE, water_year_start = 8)
+# Four seasons starting in January
+add_seasons(data = "08NM116",
+            seasons_length = 4)
 
+# Two seasons starting in October
+add_seasons(data = "08NM116", 
+            water_year_start = 10,
+            seasons_length = 6)
 }
 }

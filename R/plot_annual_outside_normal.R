@@ -1,4 +1,4 @@
-# Copyright 2017 Province of British Columbia
+# Copyright 2019 Province of British Columbia
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,32 +26,35 @@
 #'   \item{Days_Below_Normal}{number of days per year below the daily normal (default 25th percentile)}
 #'   \item{Days_Above_Normal}{number of days per year above the daily normal (default 75th percentile)}
 #'   \item{Days_Outside_Normal}{number of days per year below and above the daily normal (default 25/75th percentile)}
-#'
+#'   
+#' @seealso \code{\link{calc_annual_outside_normal}}
+#' 
 #' @examples
 #' \dontrun{
 #' 
+#' # Plot statistics with default limits of normal (25 and 75th percentiles)
+#' plot_annual_outside_normal(station_number = "08NM116") 
+#' 
+#' # Plot statistics with custom limits of normal
 #' plot_annual_outside_normal(station_number = "08NM116",
-#'                            water_year = TRUE, 
-#'                            water_year_start = 8)
-#'
+#'                            normal_percentiles = c(10,90))
 #' }
 #' @export
 
 
 
-plot_annual_outside_normal <- function(data = NULL,
+plot_annual_outside_normal <- function(data,
                                        dates = Date,
                                        values = Value,
                                        groups = STATION_NUMBER,
-                                       station_number = NULL,
-                                       normal_percentiles = c(25, 75),
+                                       station_number,
+                                       normal_percentiles = c(25,75),
                                        roll_days = 1,
                                        roll_align = "right",
-                                       water_year = FALSE,
-                                       water_year_start = 10,
-                                       start_year = 0,
-                                       end_year = 9999,
-                                       exclude_years = NULL, 
+                                       water_year_start = 1,
+                                       start_year,
+                                       end_year,
+                                       exclude_years, 
                                        months = 1:12,
                                        include_title = FALSE){
   
@@ -59,6 +62,22 @@ plot_annual_outside_normal <- function(data = NULL,
   
   ## ARGUMENT CHECKS
   ## ---------------
+  
+  if (missing(data)) {
+    data = NULL
+  }
+  if (missing(station_number)) {
+    station_number = NULL
+  }
+  if (missing(start_year)) {
+    start_year = 0
+  }
+  if (missing(end_year)) {
+    end_year = 9999
+  }
+  if (missing(exclude_years)) {
+    exclude_years = NULL
+  }
   
   include_title_checks(include_title)
   
@@ -81,11 +100,10 @@ plot_annual_outside_normal <- function(data = NULL,
   ## CALC STATS
   ## ----------
   
-  normal_data <- fasstr::calc_annual_outside_normal(data = flow_data,
+  normal_data <- calc_annual_outside_normal(data = flow_data,
                                                     normal_percentiles = normal_percentiles,
                                                     roll_days = roll_days,
                                                     roll_align = roll_align,
-                                                    water_year = water_year,
                                                     water_year_start = water_year_start,
                                                     start_year = start_year,
                                                     end_year = end_year,
@@ -108,10 +126,11 @@ plot_annual_outside_normal <- function(data = NULL,
   normal_plots <- dplyr::mutate(normal_plots,
                                 plot = purrr::map2(data, STATION_NUMBER, 
         ~ggplot2::ggplot(data = ., ggplot2::aes(x = Year, y = Value, color = Statistic)) +
-          ggplot2::geom_line(alpha = 0.5) +
-          ggplot2::geom_point() +
-          ggplot2::facet_wrap(~Statistic, scales="free_x", ncol = 1, strip.position = "right") +
-          ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(n = 6)) +
+          ggplot2::geom_line(alpha = 0.5, na.rm = TRUE) +
+          ggplot2::geom_point(na.rm = TRUE) +
+          ggplot2::facet_wrap(~Statistic, scales="free_x", ncol = 1, strip.position = "top") +
+          ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(n = 8))+
+          {if(length(unique(normal_data$Year)) < 8) ggplot2::scale_x_continuous(breaks = unique(normal_data$Year))}+
           ggplot2::scale_y_continuous(breaks = scales::pretty_breaks(n = 6)) +
           ggplot2::ylab("Number of Days") +
           ggplot2::xlab("Year") +
@@ -122,7 +141,9 @@ plot_annual_outside_normal <- function(data = NULL,
                          panel.grid = ggplot2::element_line(size = .2),
                          axis.title = ggplot2::element_text(size = 12),
                          axis.text = ggplot2::element_text(size = 10),
-                         plot.title = ggplot2::element_text(hjust = 1, size = 9, colour = "grey25"))
+                         plot.title = ggplot2::element_text(hjust = 1, size = 9, colour = "grey25"),
+                         strip.background = ggplot2::element_blank(),
+                         strip.text = ggplot2::element_text(hjust = 0, face = "bold", size = 10))
                                 ))
   
   # Create a list of named plots extracted from the tibble

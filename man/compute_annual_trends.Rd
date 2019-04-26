@@ -4,15 +4,14 @@
 \alias{compute_annual_trends}
 \title{Calculate prewhitened nonlinear annual trends on streamflow data}
 \usage{
-compute_annual_trends(data = NULL, dates = Date, values = Value,
-  groups = STATION_NUMBER, station_number = NULL, zyp_method = NA,
-  basin_area = NA, water_year = FALSE, water_year_start = 10,
-  start_year = 0, end_year = 9999, exclude_years = NULL,
+compute_annual_trends(data, dates = Date, values = Value,
+  groups = STATION_NUMBER, station_number, zyp_method, basin_area,
+  water_year_start = 1, start_year, end_year, exclude_years,
   annual_percentiles = c(10, 90), monthly_percentiles = c(10, 20),
-  stats_days = 1, stats_align = "right", lowflow_days = c(1, 3, 7, 30),
-  lowflow_align = "right", timing_percent = c(25, 33, 50, 75),
+  stats_days = 1, stats_align = "right", lowflow_days = c(1, 3, 7,
+  30), lowflow_align = "right", timing_percent = c(25, 33, 50, 75),
   normal_percentiles = c(25, 75), ignore_missing = FALSE,
-  incl_data = TRUE)
+  include_plots = TRUE, zyp_alpha)
 }
 \arguments{
 \item{data}{A data frame of daily data that contains columns of dates, flow values, and (optional) groups (e.g. station numbers).
@@ -41,14 +40,10 @@ Required.}
 
 (2) A single numeric value to apply to all observations.
 
-(3) List each basin area for each group/station in groups (can override HYDAT value) as such \code{c("08NM116" = 795, 
-"08NM242" = 10)}. Group not listed will result in NA basin area.}
+(3) List each basin area for each group/station in groups (can override HYDAT value if listed) as such \code{c("08NM116" = 795, 
+"08NM242" = 10)}. If group is not listed the HYDAT area will be applied if it exists, otherwise it will be NA.}
 
-\item{water_year}{Logical value indicating whether to use water years to group data instead of calendar years. Water years 
-are designated by the calendar year in which they end. Default \code{FALSE}.}
-
-\item{water_year_start}{Numeric value indicating the month of the start of the water year. Used if \code{water_year = TRUE}. 
-Default \code{10}.}
+\item{water_year_start}{Numeric value indicating the month of the start of the water year for analysis. Default \code{1}.}
 
 \item{start_year}{Numeric value of the first year to consider for analysis. Leave blank to use the first year of the source data.}
 
@@ -60,7 +55,7 @@ Default \code{10}.}
 function. Default \code{c(10,90)}.}
 
 \item{monthly_percentiles}{Numeric vector of percentiles to calculate monthly for each year. Set to NA if none required. Used for 
-calc_monthly_stats() function. Default \code{c(10,90)}.}
+calc_monthly_stats() function. Default \code{c(10,20)}.}
 
 \item{stats_days}{Numeric vector of the number of days to apply a rolling mean on basic stats. Default \code{c(1)}.
 Used for calc_annual_stats() and calc_monthly_stats() functions.}
@@ -86,32 +81,15 @@ normal range. Default \code{c(25,75)}.}
 \code{TRUE} then a statistic will be calculated regardless of missing dates. If \code{FALSE} then only statistics from time periods 
 with no missing dates will be returned. Default \code{FALSE}.}
 
-\item{incl_data}{Logical value indicating whether to include the trending data with the results. Default \code{TRUE}.}
+\item{include_plots}{Logical value indicating if annual trending plots should be included. Default \code{TRUE}.}
+
+\item{zyp_alpha}{Numeric value of the significance level (ex. 0.05) of when to plot a trend line. Leave blank for no line.}
 }
 \value{
-A data frame containing trends with the following outputs from the zyp package:
-  \item{Statistic}{the annual statistic used for trending.}
-  \item{lbound}{the lower bound of the trend's confidence interval}
-  \item{trend}{the Sens' slope (trend) per unit time}
-  \item{trendp}{the Sen's slope (trend) over the time period}
-  \item{ubound}{the upper bound of the trend's confidence interval}
-  \item{tau}{Kendall's tau statistic computed on the final detrended timeseries}
-  \item{sig}{Kendall's P-value computed for the final detrended timeseries}
-  \item{nruns}{the number of runs required to converge upon a trend}
-  \item{autocor}{the autocorrelation of the final detrended timeseries}
-  \item{valid_frac}{the fraction of the data which is valid (not NA) once autocorrelation is removed}
-  \item{linear}{the least squares fit trend on the same dat}
-  \item{intercept}{the lower bound of the trend's confidence interval}
-  \item{lbound}{the intercept of the Sen's slope (trend)}
-  and the following additional columns:
-  \item{min_year}{the minimum year used in the trending}
-  \item{max_year}{the maximum year used in the trending}
-  \item{n_years}{the number of years with data for trending}
-  \item{mean}{the mean of all values used for trending}
-  \item{median}{the median of all values used for trending}
-  \item{min}{the minimum of all values used for trending}
-  \item{max}{the maximum of all values used for trending}
-  Transposing data creates a column of "Trends_Statistics" and subsequent columns of each trends statistic for each annual statistic.
+A list of tibbles and optional plots from the trending analysis including:
+  \item{Annual_Trends_Data}{a tibbble of the annual statistics used for trending}
+  \item{Annual_Trends_Results}{a tibble of the results of the zyp trending analysis}
+  \item{Annual_*}{each ggplot2 object for each annual trended statistic}
 }
 \description{
 Calculates prewhitened nonlinear trends on annual streamflow data. Uses the
@@ -129,10 +107,41 @@ Calculates prewhitened nonlinear trends on annual streamflow data. Uses the
 \examples{
 \dontrun{
 
-compute_annual_trends(station_number = "08NM116", 
-                      water_year = TRUE, 
-                      water_year_start = 8,
+# Compute trends statistics using data argument with defaults
+flow_data <- tidyhydat::hy_daily_flows(station_number = "08NM116")
+compute_annual_trends(data = flow_data,
                       zyp_method = "yuepilon")
 
+# Compute trends statistics using station_number with defaults
+compute_annual_trends(station_number = "08NM116",
+                      zyp_method = "yuepilon")
+                      
+# Compute trends statistics and plot a trend line if the significance is less than 0.05
+compute_annual_trends(station_number = "08NM116",
+                      zyp_method = "yuepilon",
+                      zyp_alpha = 0.05)
+                      
+# Compute trends statistics and do not plot the results
+compute_annual_trends(station_number = "08NM116",
+                      zyp_method = "yuepilon",
+                      include_plots = FALSE)
 }
+}
+\references{
+References from zyp package:
+\itemize{
+ \item{Wang, X.L. and Swail, V.R., 2001. Changes in extreme wave heights in northern hemisphere oceans and 
+       related atmospheric circulation regimes. Journal of Climate, 14: 2204-2221.}
+ \item{Yue, S., P. Pilon, B. Phinney and G. Cavadias, 2002. The influence of autocorrelation on the ability
+       to detect trend in hydrological series. Hydrological Processes, 16: 1807-1829.}
+ \item{Zhang, X., Vincent, L.A., Hogg, W.D. and Niitsoo, A., 2000. Temperature and Precipitation Trends in
+       Canada during the 20th Century. Atmosphere-Ocean 38(3): 395-429.}
+ \item{Sen, P.K., 1968. Estimates of the Regression Coefficient Based on Kendall's Tau. Journal of the 
+       American Statistical Association Vol. 63, No. 324: 1379-1389.}
+       }
+}
+\seealso{
+\code{\link[zyp]{zyp-package}}, 
+         \code{\link[zyp]{zyp.trend.dataframe}}, 
+         \code{\link{calc_all_annual_stats}}
 }

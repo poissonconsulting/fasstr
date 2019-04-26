@@ -1,4 +1,4 @@
-# Copyright 2017 Province of British Columbia
+# Copyright 2019 Province of British Columbia
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,57 +29,67 @@
 #' @inheritParams calc_all_annual_stats
 #' @param zyp_method Character string identifying the prewhitened trend method to use from 'zyp', either "zhang' or "yuepilon". 
 #'    Required.
-#' @param incl_data Logical value indicating whether to include the trending data with the results. Default \code{TRUE}.
+#' @param include_plots Logical value indicating if annual trending plots should be included. Default \code{TRUE}.
+#' @param zyp_alpha Numeric value of the significance level (ex. 0.05) of when to plot a trend line. Leave blank for no line.
 #' 
-#' @return A data frame containing trends with the following outputs from the zyp package:
-#'   \item{Statistic}{the annual statistic used for trending.}
-#'   \item{lbound}{the lower bound of the trend's confidence interval}
-#'   \item{trend}{the Sens' slope (trend) per unit time}
-#'   \item{trendp}{the Sen's slope (trend) over the time period}
-#'   \item{ubound}{the upper bound of the trend's confidence interval}
-#'   \item{tau}{Kendall's tau statistic computed on the final detrended timeseries}
-#'   \item{sig}{Kendall's P-value computed for the final detrended timeseries}
-#'   \item{nruns}{the number of runs required to converge upon a trend}
-#'   \item{autocor}{the autocorrelation of the final detrended timeseries}
-#'   \item{valid_frac}{the fraction of the data which is valid (not NA) once autocorrelation is removed}
-#'   \item{linear}{the least squares fit trend on the same dat}
-#'   \item{intercept}{the lower bound of the trend's confidence interval}
-#'   \item{lbound}{the intercept of the Sen's slope (trend)}
-#'   and the following additional columns:
-#'   \item{min_year}{the minimum year used in the trending}
-#'   \item{max_year}{the maximum year used in the trending}
-#'   \item{n_years}{the number of years with data for trending}
-#'   \item{mean}{the mean of all values used for trending}
-#'   \item{median}{the median of all values used for trending}
-#'   \item{min}{the minimum of all values used for trending}
-#'   \item{max}{the maximum of all values used for trending}
-#'   Transposing data creates a column of "Trends_Statistics" and subsequent columns of each trends statistic for each annual statistic.
+#' @return A list of tibbles and optional plots from the trending analysis including:
+#'   \item{Annual_Trends_Data}{a tibbble of the annual statistics used for trending}
+#'   \item{Annual_Trends_Results}{a tibble of the results of the zyp trending analysis}
+#'   \item{Annual_*}{each ggplot2 object for each annual trended statistic}
+#' 
+#' @references References from zyp package:
+#' \itemize{
+#'  \item{Wang, X.L. and Swail, V.R., 2001. Changes in extreme wave heights in northern hemisphere oceans and 
+#'        related atmospheric circulation regimes. Journal of Climate, 14: 2204-2221.}
+#'  \item{Yue, S., P. Pilon, B. Phinney and G. Cavadias, 2002. The influence of autocorrelation on the ability
+#'        to detect trend in hydrological series. Hydrological Processes, 16: 1807-1829.}
+#'  \item{Zhang, X., Vincent, L.A., Hogg, W.D. and Niitsoo, A., 2000. Temperature and Precipitation Trends in
+#'        Canada during the 20th Century. Atmosphere-Ocean 38(3): 395-429.}
+#'  \item{Sen, P.K., 1968. Estimates of the Regression Coefficient Based on Kendall's Tau. Journal of the 
+#'        American Statistical Association Vol. 63, No. 324: 1379-1389.}
+#'        }
+#'      
+#' @seealso \code{\link[zyp]{zyp-package}}, 
+#'          \code{\link[zyp]{zyp.trend.dataframe}}, 
+#'          \code{\link{calc_all_annual_stats}}
 #'   
 #' @examples
 #' \dontrun{
 #' 
-#' compute_annual_trends(station_number = "08NM116", 
-#'                       water_year = TRUE, 
-#'                       water_year_start = 8,
+#' # Compute trends statistics using data argument with defaults
+#' flow_data <- tidyhydat::hy_daily_flows(station_number = "08NM116")
+#' compute_annual_trends(data = flow_data,
 #'                       zyp_method = "yuepilon")
-#'
+#' 
+#' # Compute trends statistics using station_number with defaults
+#' compute_annual_trends(station_number = "08NM116",
+#'                       zyp_method = "yuepilon")
+#'                       
+#' # Compute trends statistics and plot a trend line if the significance is less than 0.05
+#' compute_annual_trends(station_number = "08NM116",
+#'                       zyp_method = "yuepilon",
+#'                       zyp_alpha = 0.05)
+#'                       
+#' # Compute trends statistics and do not plot the results
+#' compute_annual_trends(station_number = "08NM116",
+#'                       zyp_method = "yuepilon",
+#'                       include_plots = FALSE)
 #' }
 #' @export
 
 
 
-compute_annual_trends <- function(data = NULL,
+compute_annual_trends <- function(data,
                                   dates = Date,
                                   values = Value,
                                   groups = STATION_NUMBER,
-                                  station_number = NULL,
-                                  zyp_method = NA,
-                                  basin_area = NA, 
-                                  water_year = FALSE,
-                                  water_year_start = 10,
-                                  start_year = 0,
-                                  end_year = 9999,
-                                  exclude_years = NULL,
+                                  station_number,
+                                  zyp_method,
+                                  basin_area, 
+                                  water_year_start = 1,
+                                  start_year,
+                                  end_year,
+                                  exclude_years,
                                   annual_percentiles = c(10,90),
                                   monthly_percentiles = c(10,20),
                                   stats_days = 1,
@@ -89,17 +99,43 @@ compute_annual_trends <- function(data = NULL,
                                   timing_percent = c(25,33,50,75),
                                   normal_percentiles = c(25,75),
                                   ignore_missing = FALSE,
-                                  incl_data = TRUE){       
+                                  include_plots = TRUE,
+                                  zyp_alpha){       
   
   
   
   ## ARGUMENT CHECKS
   ## ---------------
   
-  if (is.na(zyp_method) | !zyp_method %in% c("yuepilon", "zhang") )   
-    stop('zyp_trending argument must be either "yuepilon" or "zhang"', call. = FALSE)
-  if (!is.logical(incl_data))  
-    stop("incl_data argument must be logical (TRUE/FALSE).", call. = FALSE)
+  if (missing(data)) {
+    data = NULL
+  }
+  if (missing(station_number)) {
+    station_number = NULL
+  }
+  if (missing(start_year)) {
+    start_year = 0
+  }
+  if (missing(end_year)) {
+    end_year = 9999
+  }
+  if (missing(exclude_years)) {
+    exclude_years = NULL
+  }
+  if (missing(basin_area)) {
+    basin_area = NA
+  }
+  if (missing(zyp_method)) {
+    zyp_method = NA
+  }
+  if (missing(zyp_alpha)) {
+    zyp_alpha = NA
+  }
+  
+  zyp_method_checks(zyp_method)
+  zyp_alpha_checks(zyp_alpha)
+  if (!is.logical(include_plots))         
+    stop("include_plots must be logical (TRUE/FALSE).", call. = FALSE)
   
   
   ## CHECKS ON FLOW DATA
@@ -122,7 +158,6 @@ compute_annual_trends <- function(data = NULL,
   
   trends_data <- calc_all_annual_stats(data = flow_data,
                                        basin_area = basin_area, 
-                                       water_year = water_year,
                                        water_year_start = water_year_start,
                                        start_year = start_year,
                                        end_year = end_year,
@@ -159,23 +194,98 @@ compute_annual_trends <- function(data = NULL,
   
   # Merge the summary stats with the results
   trends_results <- merge(trends_results, trends_data_summary, by = c("STATION_NUMBER", "Statistic"), all = TRUE)
-  if(incl_data){
-    trends_results <- merge(trends_results, trends_data, by = c("STATION_NUMBER", "Statistic"), all = TRUE)
-  }
   
   # Order the list of stats in order of all_stats
   trends_results <- dplyr::arrange(trends_results, STATION_NUMBER, Statistic)
   
   
-  # Recheck if station_number/grouping was in original flow_data and rename or remove as necessary
-  if("STATION_NUMBER" %in% orig_cols) {
-    names(trends_results)[names(trends_results) == "STATION_NUMBER"] <- as.character(substitute(groups))
-  } else {
-    trends_results <- dplyr::select(trends_results, -STATION_NUMBER)
+  # Create plots if required
+  if (include_plots) {
+    
+    # Create the list to place all plots
+    plots_list <- list()
+    
+    for (stn in unique(trends_results$STATION_NUMBER)) {
+      
+      trends_results_stn <- dplyr::filter(trends_results, STATION_NUMBER == stn)
+      trends_results_stn <- dplyr::select(trends_results_stn, -STATION_NUMBER)
+      
+      trends_data_stn <- dplyr::filter(trends_data, STATION_NUMBER == stn)
+      trends_data_stn <- dplyr::select(trends_data_stn, -STATION_NUMBER)
+      
+      ## PLOT TRENDS
+      ## -----------
+      
+      # Set data for plotting
+      trends_data_stn <- tidyr::gather(trends_data_stn, Year, Value, -1)
+      trends_data_stn <- dplyr::filter(trends_data_stn, Year >= min(trends_results_stn$min_year, na.rm = TRUE))
+      
+      trends_data_stn <- dplyr::mutate(trends_data_stn, Year = as.numeric(Year))
+      
+      trends_data_stn <- dplyr::mutate(trends_data_stn,
+                                       Units= "Discharge (cms)",
+                                       Units = replace(Units, grepl("Yield_mm", Statistic), "Yield (mm)"),
+                                       Units = replace(Units, grepl("Volume_m3", Statistic), "Volume (m3)"),
+                                       Units = replace(Units, grepl("DoY", Statistic), "Day of Year"),
+                                       Units = replace(Units, grepl("Days", Statistic), "Number of Days"))
+      
+      
+      # Loop through each statistic and plot the annual data, add trendline if < zyp_alpha
+      for (stat in unique(trends_results_stn$Statistic)){
+        # Filter for metric
+        trends_data_stat <- dplyr::filter(trends_data_stn, Statistic == stat)
+        trends_results_stat <- dplyr::filter(trends_results_stn, Statistic == stat)
+        int <- trends_results_stat$intercept - trends_results_stat$trend * trends_results_stat$min_year
+        # Plot each metric
+        trends_plot <- ggplot2::ggplot(trends_data_stat, ggplot2::aes(x = Year, y = Value)) +
+          ggplot2::geom_point(shape = 1, size = 2, colour = "darkblue", stroke = 2, na.rm = TRUE) +
+          # ggplot2::geom_line(alpha = 0.3, na.rm = TRUE) +
+          ggplot2::ggtitle(paste0(stat," (sig. = ", round(trends_results_stat$sig, 3), ")")) +
+          #{if(length(unique(trends_results$STATION_NUMBER)) > 1) ggplot2::ggtitle(paste0(stn, ": ", stat,"   (Sig. = ", round(trends_results_stat$sig, 3), ")"))} +
+          ggplot2::xlab("Year") +
+          ggplot2::ylab(trends_data_stat$Units) +
+          ggplot2::theme_bw() +
+          ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(n = 12)) +
+          ggplot2::scale_y_continuous(breaks = scales::pretty_breaks(n = 6)) +
+          ggplot2::theme(panel.border = ggplot2::element_rect(colour = "black", fill = NA, size = 1),
+                         panel.grid = ggplot2::element_line(size = .2),
+                         axis.title = ggplot2::element_text(size = 12),
+                         axis.text = ggplot2::element_text(size = 10))
+        # If sig. trend, plot trend
+        if(!is.na(zyp_alpha) & trends_results_stat$sig < zyp_alpha & !is.na(trends_results_stat$sig)) {
+          trends_plot <- trends_plot +
+            ggplot2::geom_abline(slope = trends_results_stat$trend, intercept = int, colour = "red", linetype = "longdash")
+        }
+        
+        if (length(unique(trends_results$STATION_NUMBER)) == 1) {
+          plots_list[[ stat ]] <- trends_plot
+        } else {
+          plots_list[[ paste0(stn, "_", stat) ]] <- trends_plot
+        }
+      }
+    }
   }
   
   
-  dplyr::as_tibble(trends_results)
+  # Recheck if station_number/grouping was in original flow_data and rename or remove as necessary
+  if("STATION_NUMBER" %in% orig_cols) {
+    names(trends_results)[names(trends_results) == "STATION_NUMBER"] <- as.character(substitute(groups))
+    names(trends_data)[names(trends_data) == "STATION_NUMBER"] <- as.character(substitute(groups))
+  } else {
+    trends_results <- dplyr::select(trends_results, -STATION_NUMBER)
+    trends_data <- dplyr::select(trends_data, -STATION_NUMBER)
+  }
+  
+  # Create list of objects
+  trends_list <- list("Annual_Trends_Data" = dplyr::as_tibble(trends_data),
+                      "Annual_Trends_Results" = dplyr::as_tibble(trends_results))
+  
+  # Add plots to list
+  if (include_plots) {
+    trends_list <- append(trends_list, plots_list)
+  }
+  
+  return(trends_list)
   
 } 
 

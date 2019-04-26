@@ -1,4 +1,4 @@
-# Copyright 2017 Province of British Columbia
+# Copyright 2019 Province of British Columbia
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,35 +28,60 @@
 #'   \item{DoY_50pct_TotalQ}{day of year of 50-percent of total volumetric discharge}
 #'   \item{DoY_75pct_TotalQ}{day of year of 75-percent of total volumetric discharge}
 #'   
+#' @references 
+#' \itemize{
+#'  \item{Barnett, T.P., Pierce, D.W., Hidalgo, H.G., Bonfils, C., Santer, B.D., Das, T., Bala, G., Wood, A.W.,
+#'        Nozawa, T., Mirin, A.A., Cayan, D.R., Dettinger, M.D., 2008. Human-Induced Clanges in the Hydrology of 
+#'        the Western United States. Science 319, 1080-1083.}
+#'        }
+#'        
+#' @seealso \code{\link{calc_annual_flow_timing}}
+#'   
 #' @examples
 #' \dontrun{
 #' 
-#' plot_annual_flow_timing(station_number = "08NM116", 
-#'                         water_year = TRUE, 
-#'                         water_year_start = 8, 
+#' # Plot statistics with default percent totals
+#' plot_annual_flow_timing(station_number = "08NM116") 
+#' 
+#' # Plot statistics with custom percent totals
+#' plot_annual_flow_timing(station_number = "08NM116",
 #'                         percent_total = 50)
-#'
 #' }
 #' @export
 
 
-plot_annual_flow_timing <- function(data = NULL,
+plot_annual_flow_timing <- function(data,
                                     dates = Date,
                                     values = Value,
                                     groups = STATION_NUMBER,
-                                    station_number = NULL,
+                                    station_number,
                                     percent_total = c(25,33.3,50,75),
-                                    water_year = FALSE,
-                                    water_year_start = 10,
-                                    start_year = 0,
-                                    end_year = 9999,
-                                    exclude_years = NULL,
+                                    water_year_start = 1,
+                                    start_year,
+                                    end_year,
+                                    exclude_years,
                                     include_title = FALSE){ 
   
   ## ARGUMENT CHECKS 
   ## others will be check in calc_ function
   ## ---------------
   
+  if (missing(data)) {
+    data = NULL
+  }
+  if (missing(station_number)) {
+    station_number = NULL
+  }
+  if (missing(start_year)) {
+    start_year = 0
+  }
+  if (missing(end_year)) {
+    end_year = 9999
+  }
+  if (missing(exclude_years)) {
+    exclude_years = NULL
+  }
+
   include_title_checks(include_title)
   
   ## FLOW DATA CHECKS AND FORMATTING
@@ -81,7 +106,6 @@ plot_annual_flow_timing <- function(data = NULL,
                                           dates = Date,
                                           values = Value,
                                           percent_total = percent_total,
-                                          water_year = water_year,
                                           water_year_start = water_year_start,
                                           start_year = start_year,
                                           end_year = end_year,
@@ -103,14 +127,14 @@ plot_annual_flow_timing <- function(data = NULL,
   timing_plots <- dplyr::mutate(timing_plots,
                               plot = purrr::map2(data, STATION_NUMBER, 
       ~ggplot2::ggplot(data = ., ggplot2::aes(x = Year, y = Value, color = Statistic)) +
-        ggplot2::geom_line(alpha = 0.5) +
-        ggplot2::geom_point() +
-        {if(length(percent_total) > 1) ggplot2::facet_wrap(~Statistic, scales = "free_y", ncol = 1, strip.position = "right")} +
-        ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(n = 6)) +
-        ggplot2::scale_y_continuous(breaks = scales::pretty_breaks(n = 6)) +
+        ggplot2::geom_line(alpha = 0.5, na.rm = TRUE) +
+        ggplot2::geom_point(na.rm = TRUE) +
+        {if(length(percent_total) > 1) ggplot2::facet_wrap(~Statistic, scales = "free_y", ncol = 1, strip.position = "top")} +
+        ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(n = 8))+
+        {if(length(unique(timing_stats$Year)) < 8) ggplot2::scale_x_continuous(breaks = unique(timing_stats$Year))}+
         ggplot2::ylab("Day of Year") +
         ggplot2::xlab("Year") +
-        ggplot2::scale_color_brewer(palette = "Set1") +
+        #ggplot2::scale_color_brewer(palette = "Set1") +
         ggplot2::theme_bw() +
         ggplot2::guides(colour = FALSE) +
         {if (include_title & .y != "XXXXXXX") ggplot2::ggtitle(paste(.y)) } +
@@ -122,7 +146,9 @@ plot_annual_flow_timing <- function(data = NULL,
                        panel.grid = ggplot2::element_line(size = .2),
                        axis.title = ggplot2::element_text(size = 12),
                        axis.text = ggplot2::element_text(size = 10),
-                       plot.title = ggplot2::element_text(hjust = 1, size = 9, colour = "grey25"))
+                       plot.title = ggplot2::element_text(hjust = 1, size = 9, colour = "grey25"),
+                       strip.background = ggplot2::element_blank(),
+                       strip.text = ggplot2::element_text(hjust = 0, face = "bold", size = 10))
                               ))
   
   # Create a list of named plots extracted from the tibble

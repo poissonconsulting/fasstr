@@ -1,4 +1,4 @@
-# Copyright 2017 Province of British Columbia
+# Copyright 2019 Province of British Columbia
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@
 #' @param annual_percentiles Numeric vector of percentiles to calculate annually. Set to NA if none required. Used for calc_annual_stats()
 #'    function. Default \code{c(10,90)}.
 #' @param monthly_percentiles Numeric vector of percentiles to calculate monthly for each year. Set to NA if none required. Used for 
-#'    calc_monthly_stats() function. Default \code{c(10,90)}.
+#'    calc_monthly_stats() function. Default \code{c(10,20)}.
 #' @param stats_days Numeric vector of the number of days to apply a rolling mean on basic stats. Default \code{c(1)}.
 #'    Used for calc_annual_stats() and calc_monthly_stats() functions.
 #' @param stats_align Character string identifying the direction of the rolling mean on basic stats from the specified date, either by 
@@ -49,29 +49,33 @@
 #' @return A tibble data frame with column "Year" and then 107 (default) variables from the fasstr annual functions.
 #'    See listed functions above for default variables. Transposing data creates a column of "Statistics" and subsequent
 #'    columns for each year selected.
+#' 
+#' @seealso \code{\link{calc_annual_stats}},
+#'          \code{\link{calc_annual_lowflows}}, 
+#'          \code{\link{calc_annual_cumulative_stats}}, 
+#'          \code{\link{calc_annual_flow_timing}}, 
+#'          \code{\link{calc_monthly_stats}}, 
+#'          \code{\link{calc_annual_outside_normal}}
 #'
 #' @examples
 #' \dontrun{
 #' 
-#' calc_all_annual_stats(station_number = "08NM116", 
-#'                       water_year = TRUE, 
-#'                       water_year_start = 8)
-#'
+#' # Calculate statistics with default arguments
+#' calc_all_annual_stats(station_number = "08NM116") 
 #' }
 #' @export
 
 
-calc_all_annual_stats <- function(data = NULL,
+calc_all_annual_stats <- function(data,
                                   dates = Date,
                                   values = Value,
                                   groups = STATION_NUMBER,
-                                  station_number = NULL,
-                                  basin_area = NA, 
-                                  water_year = FALSE,
-                                  water_year_start = 10,
-                                  start_year = 0,
-                                  end_year = 9999,
-                                  exclude_years = NULL,
+                                  station_number,
+                                  basin_area, 
+                                  water_year_start = 1,
+                                  start_year,
+                                  end_year,
+                                  exclude_years,
                                   annual_percentiles = c(10,90),
                                   monthly_percentiles = c(10,20),
                                   stats_days = 1,
@@ -88,7 +92,26 @@ calc_all_annual_stats <- function(data = NULL,
   ## ARGUMENT CHECKS
   ## ---------------
   
-  water_year_checks(water_year, water_year_start)
+  if (missing(data)) {
+    data = NULL
+  }
+  if (missing(station_number)) {
+    station_number = NULL
+  }
+  if (missing(start_year)) {
+    start_year = 0
+  }
+  if (missing(end_year)) {
+    end_year = 9999
+  }
+  if (missing(exclude_years)) {
+    exclude_years = NULL
+  }
+  if (missing(basin_area)) {
+    basin_area = NA
+  }
+  
+  water_year_checks(water_year_start)
   years_checks(start_year, end_year, exclude_years)
   transpose_checks(transpose)
   ignore_missing_checks(ignore_missing)
@@ -127,7 +150,6 @@ calc_all_annual_stats <- function(data = NULL,
                                                      percentiles = annual_percentiles,
                                                      roll_days = stats_days,
                                                      roll_align = stats_align,
-                                                     water_year = water_year,
                                                      water_year_start = water_year_start,
                                                      start_year = start_year,
                                                      end_year = end_year,
@@ -143,7 +165,6 @@ calc_all_annual_stats <- function(data = NULL,
   lowflow_stats <- suppressWarnings(calc_annual_lowflows(data = flow_data,
                                                          roll_days = lowflow_days,
                                                          roll_align = lowflow_align,
-                                                         water_year = water_year,
                                                          water_year_start = water_year_start,
                                                          start_year = start_year,
                                                          end_year = end_year,
@@ -155,27 +176,24 @@ calc_all_annual_stats <- function(data = NULL,
   totalQ_stats <- suppressWarnings(calc_annual_cumulative_stats(data = flow_data,
                                                                 use_yield = FALSE,
                                                                 basin_area = NA,
-                                                                water_year = water_year,
                                                                 water_year_start = water_year_start,
                                                                 start_year = start_year,
                                                                 end_year = end_year,
                                                                 exclude_years = exclude_years,
-                                                                incl_seasons = TRUE))
+                                                                include_seasons = TRUE))
   
   totalyield_stats <- suppressWarnings(calc_annual_cumulative_stats(data = flow_data,
                                                                     use_yield = TRUE,
                                                                     basin_area = basin_area,
-                                                                    water_year = water_year,
                                                                     water_year_start = water_year_start,
                                                                     start_year = start_year,
                                                                     end_year = end_year,
                                                                     exclude_years = exclude_years,
-                                                                    incl_seasons = TRUE))
+                                                                    include_seasons = TRUE))
   
   
   timing_stats <- suppressWarnings(calc_annual_flow_timing(data = flow_data,
                                                            percent_total = timing_percent,
-                                                           water_year = water_year,
                                                            water_year_start = water_year_start,
                                                            start_year = start_year,
                                                            end_year = end_year,
@@ -187,7 +205,6 @@ calc_all_annual_stats <- function(data = NULL,
                                                      percentiles = monthly_percentiles,
                                                      roll_days = stats_days,
                                                      roll_align = stats_align,
-                                                     water_year = water_year,
                                                      water_year_start = water_year_start,
                                                      start_year = start_year,
                                                      end_year = end_year,
@@ -200,7 +217,6 @@ calc_all_annual_stats <- function(data = NULL,
                                                                normal_percentiles = normal_percentiles,
                                                                roll_days = stats_days,
                                                                roll_align = stats_align,
-                                                               water_year = water_year,
                                                                water_year_start = water_year_start,
                                                                start_year = start_year,
                                                                end_year = end_year,
@@ -232,16 +248,18 @@ calc_all_annual_stats <- function(data = NULL,
   
   
   # Give warning if any NA values or no basin areas
-  if ( anyNA(dplyr::select(all_stats, -dplyr::contains("Yield"))) & 
-       all(is.na(dplyr::select(all_stats, dplyr::contains("Yield"))))) 
+  missing_test <- dplyr::filter(all_stats, !(Year %in% exclude_years))
+  
+  if ( anyNA(dplyr::select(missing_test, -dplyr::contains("Yield"))) & 
+       all(is.na(dplyr::select(missing_test, dplyr::contains("Yield"))))) 
     warning("No basin area values provided or extracted from HYDAT, and one or more calculations included missing values and NA's were produced. Provide a basin_area if desired and/or filter data for complete years or months, or use to ignore_missing = TRUE to ignore missing values.", call. = FALSE)
   
-  if ( !anyNA(dplyr::select(all_stats, -dplyr::contains("Yield"))) & 
-       all(is.na(dplyr::select(all_stats, dplyr::contains("Yield"))))) 
+  if ( !anyNA(dplyr::select(missing_test, -dplyr::contains("Yield"))) & 
+       all(is.na(dplyr::select(missing_test, dplyr::contains("Yield"))))) 
     warning("No basin area values provided or extracted from HYDAT and NA's were produced for all 'Yield' calculations. Use basin_area argument to provide one if desired.", call. = FALSE)
   
-  if ( anyNA(all_stats[,3:ncol(all_stats)]) & 
-       !all(is.na(dplyr::select(all_stats, dplyr::contains("Yield"))))) 
+  if ( anyNA(missing_test[,3:ncol(missing_test)]) & 
+       !all(is.na(dplyr::select(missing_test, dplyr::contains("Yield"))))) 
     warning("One or more calculations included missing values and NA's were produced. Filter data for complete years or months, or use to ignore_missing = TRUE to ignore missing values.", call. = FALSE)
   
   
@@ -264,7 +282,7 @@ calc_all_annual_stats <- function(data = NULL,
   
   
   # Recheck if station_number/grouping was in original flow_data and rename or remove as necessary
-  if("STATION_NUMBER" %in% orig_cols) {
+  if(as.character(substitute(groups)) %in% orig_cols) {
     names(all_stats)[names(all_stats) == "STATION_NUMBER"] <- as.character(substitute(groups))
   } else {
     all_stats <- dplyr::select(all_stats, -STATION_NUMBER)
