@@ -1,12 +1,21 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# fasstr <img src="tools/readme/fasstr.PNG" align="right" />
+# fasstr <img src="man/figures/fasstr.PNG" align="right" />
+
+<!-- badges: start -->
 
 <a id="devex-badge" rel="Delivery" href="https://github.com/BCDevExchange/assets/blob/master/README.md"><img alt="In production, but maybe in Alpha or Beta. Intended to persist and be supported." style="border-width:0" src="https://assets.bcdevexchange.org/images/badges/delivery.svg" title="In production, but maybe in Alpha or Beta. Intended to persist and be supported." /></a>
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Travis build
 status](https://travis-ci.org/bcgov/fasstr.svg?branch=master)](https://travis-ci.org/bcgov/fasstr)
+
+[![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/fasstr)](https://cran.r-project.org/package=fasstr)
+[![CRAN
+Downloads](https://cranlogs.r-pkg.org/badges/fasstr?color=brightgreen)](https://CRAN.R-project.org/package=fasstr)
+[![cran
+checks](https://cranchecks.info/badges/worst/fasstr)](https://CRAN.R-project.org/web/checks/check_results_fasstr.html)
+<!-- badges: end -->
 
 </div>
 
@@ -40,7 +49,7 @@ Useful features of functions include:
     (internally tidys your data);
   - choosing the start month of your water year;
   - selecting for rolling day averages (e.g. 7-day rolling average);
-  - plotting options;and,
+  - plotting options; and,
   - choosing how missing dates are handled, amongst others.
 
 ## Installation
@@ -289,7 +298,7 @@ plot_daily_stats(station_number = "08NM116",
 #> $Daily_Statistics
 ```
 
-![](tools/readme/README-plot1-1.png)<!-- -->
+![](man/figures/plot1-1.png)<!-- -->
 
 ### Plotting example: flow duration curves
 
@@ -303,7 +312,7 @@ plot_flow_duration(station_number = "08NM116",
 #> $Flow_Duration
 ```
 
-![](tools/readme/README-plot2-1.png)<!-- -->
+![](man/figures/plot2-1.png)<!-- -->
 
 ### Analysis example: low-flow frequency analysis
 
@@ -352,7 +361,7 @@ freq_results <- compute_annual_frequencies(station_number = "08NM116",
 freq_results$Freq_Plot
 ```
 
-![](tools/readme/README-plot3-1.png)<!-- -->
+![](man/figures/plot3-1.png)<!-- -->
 
 ## Project Status
 
