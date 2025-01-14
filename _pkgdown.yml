@@ -1,13 +1,13 @@
 template:
+  package: poissontemplate
   params:
     bootswatch: flatly
     
-destination: docs
 
 development:
   mode: auto
   
-url: https://bcgov.github.io/fasstr
+url: https://poissonconsulting.github.io/fasstr/
 
 home:
   links:
@@ -192,4 +192,3 @@ navbar:
     - icon: fa-github fa-lg
       text: GitHub
       href: https://github.com/bcgov/fasstr
-
